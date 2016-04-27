@@ -1,5 +1,6 @@
 package io.github.suitougreentea.various_minos_trois
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
@@ -37,7 +38,7 @@ class Renderer(val game: VariousMinosTrois) {
 
         b.draw(tFrame, 152f, 72f)
 
-        g.field.filter { it.key.y < 22 }.forEach {
+        g.field.map.filter { it.key.y < 22 }.forEach {
             val (dx, dy) = getBlockCoord(it.key)
             renderBlock(b, it.value, dx, dy)
         }
@@ -75,7 +76,7 @@ class Renderer(val game: VariousMinosTrois) {
 
         b.end()
 
-        if(g.currentState is Game.StateMoving) {
+        if(g.stateManager.currentState is Game.StateMoving) {
             b.begin()
             g.currentMino.getRotatedBlocks(g.minoR).forEach { e ->
                 val (dx, dy) = getBlockCoord(g.minoX + e.first.x, g.ghostY + e.first.y)
@@ -130,12 +131,12 @@ class Renderer(val game: VariousMinosTrois) {
 
         b.begin()
 
-        val currentState = g.currentState
+        val currentState = g.stateManager.currentState
 
         val debugString = buildString {
             appendln(currentState.javaClass.simpleName)
             if(currentState is Game.StateWithTimer) appendln("-> ${currentState.timer} / ${currentState.frames}") else appendln()
-            appendln("mino: ${g.minoId}")
+            appendln("mino: ${g.currentMino.minoId}")
             appendln("x: ${g.minoX}")
             appendln("y: ${g.minoY}")
             appendln("r: ${g.minoR}")
@@ -149,9 +150,11 @@ class Renderer(val game: VariousMinosTrois) {
             appendln("explosion: ${g.explosionTimer}")
             appendln("cascade: ${g.cascadeStack}")
             appendln("chain: ${g.chain}")
+            appendln("count: ${g.countTimer}")
             appendln("expSize: ${g.currentExplosionSize}")
         }
         fDebug14.draw(b, debugString, 400f, 584f)
+        fDebug14.draw(b, "${Gdx.graphics.framesPerSecond} FPS", 16f, 584f)
 
         fun prettifyBoolean(boolean: Boolean) = if(boolean) "*" else "."
         fDebug14.draw(b, g.input.mapping.keys.map { e -> "%5s: %s %s %s".format(e.name, prettifyBoolean(e.isPressed), prettifyBoolean(e.isDown), prettifyBoolean(e.isReleased)) }.joinToString("\n"), 680f, 200f)

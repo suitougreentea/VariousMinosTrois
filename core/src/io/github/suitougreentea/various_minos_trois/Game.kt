@@ -3,24 +3,19 @@ package io.github.suitougreentea.various_minos_trois
 import java.util.*
 
 
-class Game(val input: Input, val width: Int, val height: Int) {
+class Game(val input: Input, width: Int, height: Int) {
     val bombSize = arrayOf (Pair(3, 0), Pair(3, 1), Pair(3, 2), Pair(3, 3), Pair(4, 4), Pair(4, 4), Pair(5, 5), Pair(5, 5), Pair(6, 6), Pair(6, 6), Pair(7, 7), Pair(7, 7), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8))
 
-    /*val field: Array<Array<Block?>> = Array(height, { Array<Block?>(width, { null }) })
-    fun emptifyField() {
-        field.forEachIndexed { iy, row -> row.forEachIndexed { ix, block -> field[iy][ix] = null } }
-    }*/
-    val field: MutableMap<Pos, Block> = HashMap()
+    val field = Field(width, height)
 
+    val minoRandomizer = MinoRandomizer()
     val minoDecorator = MinoDecoratorDefault()
-    var minoId = 0
-    var currentMino = Mino(minoId, minoDecorator)
+    var currentMino = Mino(minoRandomizer.next(), minoDecorator)
     var minoX = 0
     var minoY = 20
     var minoR = 0
     var ghostY = 0
 
-    val minoRandomizer = MinoRandomizer()
     var nextMinos: MutableList<Mino> = arrayListOf()
     init {
         kotlin.repeat(6) { nextMinos.add(Mino(minoRandomizer.next(), minoDecorator)) }
@@ -28,49 +23,61 @@ class Game(val input: Input, val width: Int, val height: Int) {
     var holdMino: Mino? = null
     var alreadyHolded = false
 
+    var speed = SpeedData(
+            beforeMoving = 5,
+            moveStart = 10,
+            moveSpeed = 1f,
+            drop = 22f,
+            softDrop = 1f,
+            lock = 60,
+            forceLock = 180,
+            afterMoving = 5,
+            count = 0,
+            beforeExplosion = 5,
+            explosion = 10,
+            afterExplosion = 5,
+            cascade = 22f,
+            afterCascade = 10,
+            bigBomb = 10
+    )
+
+    var rotationSystem: RotationSystem = RotationSystemStandard()
+    var spawnSystem: SpawnSystem = SpawnSystemStandard(width, 22)
+
     var moveDirection = 0
     var moveTimer = 0
-    val moveTimerMax = 10
     var moveStack = 0f
-    val moveSpeed = 1f
 
     var dropStack = 0f
-    val dropSpeed = 1/60f
     var softDropStack = 0f
-    val softDropSpeed = 1f
 
     var lockTimer = 0
-    val lockTimerMax = 60
 
     var forceLockTimer = 0
-    val forceLockTimerMax = 180
 
     var explosionTimer = 0
-    var explosionTimerMax = 30
 
     var cascadeStack = 0f
-    var cascadeSpeed = 1f
 
     var bigBombTimer = 0
-    var bigBombTimerMax = 60
+
+    var countTimer = 0
 
     var explosionList: MutableList<ExplosionData> = ArrayList()
     var cascadeList: MutableList<CascadeData> = ArrayList()
     var bigBombList: MutableList<Pos> = ArrayList()
 
-    var currentState: State = StateReady(10)
+    val stateManager = StateManager(StateReady(30))
 
     var chain = 0
     var currentExplosionSize = 0
 
-    init {
-    }
-
     fun spawnNewMino(mino: Mino) {
         currentMino = mino
-        minoX = 3
-        minoY = 20
-        minoR = 0
+        val spawnData = spawnSystem.get(mino.minoId)
+        minoX = spawnData.position.x
+        minoY = spawnData.position.y
+        minoR = spawnData.rotation
         dropStack = 0f
         softDropStack = 0f
         lockTimer = 0
@@ -78,7 +85,7 @@ class Game(val input: Input, val width: Int, val height: Int) {
     }
 
     fun attemptToMoveMino(dx: Int, dy: Int): Boolean {
-        if(hitTestMino(currentMino, minoX + dx, minoY + dy, minoR)) {
+        if(GameUtil.hitTestMino(field, currentMino, minoX + dx, minoY + dy, minoR)) {
             return false
         } else {
             minoX += dx
@@ -88,11 +95,14 @@ class Game(val input: Input, val width: Int, val height: Int) {
     }
 
     fun attemptToRotateMino(dr: Int): Boolean {
-        if(hitTestMino(currentMino, minoX, minoY, (minoR + 4 + dr) % 4)) {
-            return false
-        } else {
+        val result = rotationSystem.attempt(field, currentMino, minoX, minoY, minoR, dr)
+        if(result.success) {
+            minoX += result.offset.x
+            minoY += result.offset.y
             minoR = (minoR + 4 + dr) % 4
             return true
+        } else {
+            return false
         }
     }
 
@@ -114,21 +124,12 @@ class Game(val input: Input, val width: Int, val height: Int) {
         }
     }
 
-    fun hitTestMino(mino: Mino, x: Int, y: Int, r: Int): Boolean {
-        val blocks = mino.getRotatedBlocks(r)
-        return blocks.any { e ->
-            val dx = x + e.first.x
-            val dy = y + e.first.y
-            (dx < 0 || width <= dx || dy < 0 || height <= dy || field.containsKey(Pos(dx, dy)))
-        }
-    }
-
     fun lockMino() {
-        currentMino.getRotatedBlocks(minoR).forEach { field.set(Pos(minoX + it.first.x, minoY + it.first.y), it.second) }
+        currentMino.getRotatedBlocks(minoR).forEach { field[Pos(minoX + it.first.x, minoY + it.first.y)] = it.second }
     }
 
     fun update() {
-        currentState.update()
+        stateManager.update()
     }
 
     fun acceptMoveInput() {
@@ -144,11 +145,11 @@ class Game(val input: Input, val width: Int, val height: Int) {
         }
 
         if(input.left.isDown && moveDirection == -1) {
-            if(moveTimer < moveTimerMax) moveTimer ++
+            if(moveTimer < speed.moveStart) moveTimer ++
         }
 
         if(input.right.isDown && moveDirection == 1) {
-            if(moveTimer < moveTimerMax) moveTimer ++
+            if(moveTimer < speed.moveStart) moveTimer ++
         }
     }
 
@@ -158,31 +159,47 @@ class Game(val input: Input, val width: Int, val height: Int) {
         NOT_FILLED
     }
 
-    fun getLineState() = (0..height-1).map { iy ->
-        val line = field.filter { it.key.y == iy }
-        if(line.size == width) {
+    fun getLineState() = (0..field.height-1).map { iy ->
+        val line = field.map.filter { it.key.y == iy }
+        if(line.size == field.width) {
             if(line.any { it.value is BlockBomb || it.value is BlockBigBomb }) LineState.FILLED_WITH_BOMB else LineState.FILLED_WITHOUT_BOMB
         } else LineState.NOT_FILLED
     }
 
-    fun isBigBombNeeded() = field.filterValues { it is BlockBomb }.keys.any {
+    fun isAnyLineFilled() = getLineState().any { it == LineState.FILLED_WITHOUT_BOMB || it == LineState.FILLED_WITH_BOMB }
+    fun isExplodable() = getLineState().any { it == LineState.FILLED_WITH_BOMB }
+
+    fun isBigBombNeeded() = field.map.filterValues { it is BlockBomb }.keys.any {
         arrayOf(Pos(it.x, it.y), Pos(it.x + 1, it.y), Pos(it.x, it.y - 1), Pos(it.x + 1, it.y - 1)).all {
-            field.containsKey(it) && field.get(it) is BlockBomb
+            field.contains(it) && field.get(it) is BlockBomb
         }
     }
 
-    fun changeState(newState: State) {
-        currentState.leave()
-        currentState = newState
-        currentState.enter()
-        currentState.update()
+    fun getCurrentCascadeList(): MutableList<CascadeData> {
+        val clonedFieldMap = HashMap(field.map)
+        val list: MutableList<CascadeData> = ArrayList()
+
+        fun getConnectedBlockSet(pos: Pos): List<Pair<Pos, Block>> {
+            if(clonedFieldMap.contains(pos)) {
+                var blockList: List<Pair<Pos, Block>> = arrayListOf(Pair(pos, clonedFieldMap.get(pos)!!))
+                clonedFieldMap.remove(pos)
+                if (clonedFieldMap.contains(Pos(pos.x + 1, pos.y))) blockList += getConnectedBlockSet(Pos(pos.x + 1, pos.y))
+                if (clonedFieldMap.contains(Pos(pos.x - 1, pos.y))) blockList += getConnectedBlockSet(Pos(pos.x - 1, pos.y))
+                if (clonedFieldMap.contains(Pos(pos.x, pos.y + 1))) blockList += getConnectedBlockSet(Pos(pos.x, pos.y + 1))
+                if (clonedFieldMap.contains(Pos(pos.x, pos.y - 1))) blockList += getConnectedBlockSet(Pos(pos.x, pos.y - 1))
+                return blockList
+            } else throw IllegalStateException()
+        }
+
+        while(clonedFieldMap.size != 0) {
+            val (position, block) = clonedFieldMap.entries.first()
+            list.add(CascadeData(getConnectedBlockSet(position)))
+        }
+
+        return list
     }
 
-    interface State {
-        fun enter() {}
-        fun update()
-        fun leave() {}
-    }
+    fun isCascadeNeeded() = getCurrentCascadeList().filter { it.blocks.all { it.first.y > 0 } }.size != 0
 
     inner abstract class StateWithTimer(val frames: Int): State {
         var timer = 0
@@ -190,16 +207,23 @@ class Game(val input: Input, val width: Int, val height: Int) {
         abstract fun nextState(): State
 
         override fun update() {
-            if(timer == frames) changeState(nextState())
+            if(timer == frames) stateManager.changeState(nextState())
             else timer ++
         }
     }
 
     inner class StateReady(frames: Int): StateWithTimer(frames) {
+        override fun nextState() = StateBeforeMoving()
+    }
+
+    inner class StateBeforeMoving(): StateWithTimer(speed.beforeMoving) {
         override fun nextState() = StateMoving()
-        override fun leave() {
+        override fun update() {
+            super.update()
+            acceptMoveInput()
         }
     }
+
     inner class StateMoving: State {
         override fun enter() {
             super.enter()
@@ -216,6 +240,10 @@ class Game(val input: Input, val width: Int, val height: Int) {
             chain = 0
         }
         override fun update() {
+            if(input.a.isPressed) attemptToRotateMino(-1)
+            if(input.b.isPressed) attemptToRotateMino(+1)
+            if(input.c.isPressed) attemptToHoldMino()
+
             if(input.left.isPressed) {
                 moveDirection = -1
                 moveTimer = 0
@@ -230,8 +258,8 @@ class Game(val input: Input, val width: Int, val height: Int) {
             }
 
             if(input.left.isDown && moveDirection == -1) {
-                if(moveTimer == moveTimerMax) {
-                    moveStack += moveSpeed
+                if(moveTimer == speed.moveStart) {
+                    moveStack += speed.moveSpeed
 
                     kotlin.repeat(moveStack.toInt(), {
                         attemptToMoveMino(-1, 0)
@@ -241,8 +269,8 @@ class Game(val input: Input, val width: Int, val height: Int) {
             }
 
             if(input.right.isDown && moveDirection == 1) {
-                if(moveTimer == moveTimerMax) {
-                    moveStack += moveSpeed
+                if(moveTimer == speed.moveStart) {
+                    moveStack += speed.moveSpeed
 
                     kotlin.repeat(moveStack.toInt(), {
                         attemptToMoveMino(+1, 0)
@@ -252,34 +280,30 @@ class Game(val input: Input, val width: Int, val height: Int) {
             }
 
             if(input.down.isDown) {
-                softDropStack += softDropSpeed
+                softDropStack += speed.softDrop
                 kotlin.repeat(softDropStack.toInt(), {
                     attemptToMoveMino(0, -1)
                 })
                 softDropStack = softDropStack % 1
             } else softDropStack = 0f
 
-            if(input.up.isPressed) {
-                while(!hitTestMino(currentMino, minoX, minoY - 1, minoR)) minoY --
-                lockMino()
-                changeState(StateAfterMoving(10))
-            }
-
-            if(input.a.isPressed) attemptToRotateMino(-1)
-            if(input.b.isPressed) attemptToRotateMino(+1)
-            if(input.c.isPressed) attemptToHoldMino()
-
-            dropStack += dropSpeed
+            dropStack += speed.drop
             kotlin.repeat(dropStack.toInt(), {
                 attemptToMoveMino(0, -1)
             })
             dropStack = dropStack % 1
 
-            if(hitTestMino(currentMino, minoX, minoY - 1, minoR)) {
+            if(input.up.isPressed) {
+                while(!GameUtil.hitTestMino(field, currentMino, minoX, minoY - 1, minoR)) minoY --
+                lockMino()
+                stateManager.changeState(StateAfterMoving(speed.afterMoving))
+            }
+
+            if(GameUtil.hitTestMino(field, currentMino, minoX, minoY - 1, minoR)) {
                 dropStack = 0f
-                if(lockTimer == lockTimerMax || forceLockTimer == forceLockTimerMax) {
+                if(lockTimer == speed.lock || forceLockTimer == speed.forceLock) {
                     lockMino()
-                    changeState(StateAfterMoving(20))
+                    stateManager.changeState(StateAfterMoving(speed.afterMoving))
                 } else {
                     lockTimer ++
                     forceLockTimer ++
@@ -287,15 +311,44 @@ class Game(val input: Input, val width: Int, val height: Int) {
             } else lockTimer = 0
 
             ghostY = minoY
-            while(!hitTestMino(currentMino, minoX, ghostY - 1, minoR)) ghostY--
+            while(!GameUtil.hitTestMino(field, currentMino, minoX, ghostY - 1, minoR)) ghostY--
         }
     }
+
     inner class StateAfterMoving(frames: Int): StateWithTimer(frames) {
-        override fun nextState(): State {
-            if(getLineState().any { it == LineState.FILLED_WITH_BOMB }) return StateExplosion()
-            else if(isBigBombNeeded()) return StateMakingBigBomb()
-            else return StateMoving()
+        override fun nextState() = if(isAnyLineFilled() /* TODO: No, when line number changes */) StateCounting()
+            else if(isCascadeNeeded()) StateCascade()
+            else if(isBigBombNeeded()) StateMakingBigBomb()
+            else StateBeforeMoving()
+
+        override fun update() {
+            super.update()
+            acceptMoveInput()
         }
+    }
+
+    inner class StateCounting(): State {
+        override fun update() {
+            if(countTimer == speed.count) {
+                // TODO
+                stateManager.changeState(
+                        if(isExplodable()) StateBeforeExplosion()
+                        else if(isCascadeNeeded()) StateCascade()
+                        else if(isBigBombNeeded()) StateMakingBigBomb()
+                        else StateBeforeMoving()
+                )
+            } else countTimer ++
+            acceptMoveInput()
+        }
+
+        override fun leave() {
+            super.leave()
+            countTimer = 0
+        }
+    }
+
+    inner class StateBeforeExplosion(): StateWithTimer(speed.beforeExplosion) {
+        override fun nextState() = StateExplosion()
         override fun update() {
             super.update()
             acceptMoveInput()
@@ -306,7 +359,7 @@ class Game(val input: Input, val width: Int, val height: Int) {
         override fun enter() {
             super.enter()
             getLineState().forEachIndexed { i, e -> if(e == LineState.FILLED_WITH_BOMB) {
-                field.filter { it.key.y == i }.forEach {
+                field.map.filter { it.key.y == i }.forEach {
                     val (pos, block) = it
                     if(block is BlockBomb) block.ignited = true
                     if(block is BlockBigBomb) {
@@ -323,10 +376,10 @@ class Game(val input: Input, val width: Int, val height: Int) {
         }
         override fun update() {
             if(explosionTimer == 0) {
-                field.filterValues { it is BlockBomb && it.ignited }.forEach { explosionList.add(ExplosionData(it.key, currentExplosionSize)) }
-                field.filterValues { it is BlockBigBomb && it.position == BlockBigBomb.Position.BOTTOM_LEFT && it.ignited }.forEach { explosionList.add(ExplosionData(it.key, -1)) }
+                field.map.filterValues { it is BlockBomb && it.ignited }.forEach { explosionList.add(ExplosionData(it.key, currentExplosionSize)) }
+                field.map.filterValues { it is BlockBigBomb && it.position == BlockBigBomb.Position.BOTTOM_LEFT && it.ignited }.forEach { explosionList.add(ExplosionData(it.key, -1)) }
             }
-            if(explosionTimer == explosionTimerMax * 2/3) {
+            if(explosionTimer == speed.explosion * 2/3) {
                 explosionList.forEach {
                     val (cx, cy) = it.position
                     val (rx, ry) = if(it.size == -1) {
@@ -341,7 +394,7 @@ class Game(val input: Input, val width: Int, val height: Int) {
                         field.remove(Pos(cx, cy + 1))
                         field.remove(Pos(cx + 1, cy + 1))
                     }
-                    field.keys.filter { rx.contains(it.x) && ry.contains(it.y)}
+                    field.map.keys.filter { rx.contains(it.x) && ry.contains(it.y)}
                     .forEach {
                         val block = field.get(it)
                         if(block is BlockNormal) field.remove(it)
@@ -357,56 +410,50 @@ class Game(val input: Input, val width: Int, val height: Int) {
                     }
                 }
             }
-            if(explosionTimer == explosionTimerMax) {
+            if(explosionTimer == speed.explosion) {
                 explosionTimer = 0
                 explosionList = ArrayList()
-                if(!field.any { val block = it.value; (block is BlockBomb && block.ignited) || (block is BlockBigBomb && block.ignited) }) changeState(StateCascade())
+                if(!field.map.any { val block = it.value; (block is BlockBomb && block.ignited) || (block is BlockBigBomb && block.ignited) }) stateManager.changeState(StateAfterExplosion())
             } else explosionTimer ++
+            acceptMoveInput()
         }
     }
+
+    inner class StateAfterExplosion(): StateWithTimer(speed.afterExplosion) {
+        override fun nextState() = if(isCascadeNeeded()) StateCascade()
+            else if(isBigBombNeeded()) StateMakingBigBomb()
+            else StateBeforeMoving()
+
+        override fun update() {
+            super.update()
+            acceptMoveInput()
+        }
+    }
+
     inner class StateCascade(): State {
         override fun enter() {
             super.enter()
-            //val list: MutableMap<Pair<Int, Int>, Block> = HashMap(field)
 
-            fun getConnectedBlockSet(pos: Pos): List<Pair<Pos, Block>> {
-                if(field.contains(pos)) {
-                    var blockList: List<Pair<Pos, Block>> = arrayListOf(Pair(pos, field.get(pos)!!))
-                    field.remove(pos)
-                    if (field.contains(Pos(pos.x + 1, pos.y))) blockList += getConnectedBlockSet(Pos(pos.x + 1, pos.y))
-                    if (field.contains(Pos(pos.x - 1, pos.y))) blockList += getConnectedBlockSet(Pos(pos.x - 1, pos.y))
-                    if (field.contains(Pos(pos.x, pos.y + 1))) blockList += getConnectedBlockSet(Pos(pos.x, pos.y + 1))
-                    if (field.contains(Pos(pos.x, pos.y - 1))) blockList += getConnectedBlockSet(Pos(pos.x, pos.y - 1))
-                    return blockList
-                } else throw IllegalStateException()
-            }
+            cascadeList = getCurrentCascadeList()
+            field.clear()
 
-            while(field.size != 0) {
-                val (position, block) = field.entries.first()
-                cascadeList.add(CascadeData(getConnectedBlockSet(position)))
-            }
-
-            //emptifyField()
-
-            cascadeList.filter { it.blocks.any { it.first.y == 0 } }.forEach { it.blocks.forEach { field.put(it.first, it.second) } }
+            cascadeList.filter { it.blocks.any { it.first.y == 0 } }.forEach { it.blocks.forEach { field[it.first] = it.second } }
             cascadeList.removeAll { it.blocks.any { it.first.y == 0 } }
         }
         override fun update() {
             if(cascadeList.size == 0) {
-                changeState(
-                        if(getLineState().any { it == LineState.FILLED_WITH_BOMB }) StateExplosion()
-                        else StateMoving()
-                )
+                // Linecount may be needed
+                stateManager.changeState(StateAfterCascade())
                 return
             }
-            cascadeStack += cascadeSpeed
+            cascadeStack += speed.cascade
             kotlin.repeat(cascadeStack.toInt(), {
                 val currentCascadeList = ArrayList(cascadeList)
                 cascadeList.removeAll {true}
                 currentCascadeList.forEach {
-                    if(it.blocks.any { it.first.y == 0 || field.containsKey(Pos(it.first.x, it.first.y - 1)) }) {
+                    if(it.blocks.any { it.first.y == 0 || field.contains(Pos(it.first.x, it.first.y - 1)) }) {
                         it.blocks.forEach {
-                            field.put(it.first, it.second)
+                            field[it.first] = it.second
                         }
                     } else {
                         cascadeList.add(CascadeData(it.blocks.map { Pair(Pos(it.first.x, it.first.y - 1), it.second) }))
@@ -414,20 +461,33 @@ class Game(val input: Input, val width: Int, val height: Int) {
                 }
             })
             cascadeStack %= 1
+            acceptMoveInput()
         }
         override fun leave() {
             super.leave()
             cascadeStack = 0f
         }
     }
+
+    inner class StateAfterCascade(): StateWithTimer(speed.afterCascade) {
+        override fun nextState() = if(isExplodable()) StateCounting()
+            else if(isBigBombNeeded()) StateMakingBigBomb()
+            else StateBeforeMoving()
+
+        override fun update() {
+            super.update()
+            acceptMoveInput()
+        }
+    }
+
     inner class StateMakingBigBomb: State {
         override fun enter() {
             super.enter()
             val bigBombReservedList: MutableList<Pos> = ArrayList()
             // Sort: (0, 10), (1, 10), (0, 9), (1, 9) ...
-            field.filterValues { it is BlockBomb }.keys.sortedWith(Comparator { a, b -> if(a.y == b.y) a.x - b.x else b.y - a.y }).forEach {
+            field.map.filterValues { it is BlockBomb }.keys.sortedWith(Comparator { a, b -> if(a.y == b.y) a.x - b.x else b.y - a.y }).forEach {
                 val blockPositions = arrayOf(Pos(it.x, it.y), Pos(it.x + 1, it.y), Pos(it.x, it.y - 1), Pos(it.x + 1, it.y - 1))
-                if(blockPositions.all { field.containsKey(it) && field.get(it) is BlockBomb && !bigBombReservedList.contains(it) }) {
+                if(blockPositions.all { field.contains(it) && field.get(it) is BlockBomb && !bigBombReservedList.contains(it) }) {
                     bigBombList.add(Pos(it.x, it.y - 1))
                     blockPositions.forEach { bigBombReservedList.add(it) }
                 }
@@ -436,20 +496,38 @@ class Game(val input: Input, val width: Int, val height: Int) {
             bigBombTimer = 0
         }
         override fun update() {
-            if(bigBombTimer == bigBombTimerMax) {
+            if(bigBombTimer == speed.bigBomb) {
                 bigBombList.forEach {
-                    field.put(Pos(it.x, it.y), BlockBigBomb(BlockBigBomb.Position.BOTTOM_LEFT))
-                    field.put(Pos(it.x + 1, it.y), BlockBigBomb(BlockBigBomb.Position.BOTTOM_RIGHT))
-                    field.put(Pos(it.x, it.y + 1), BlockBigBomb(BlockBigBomb.Position.TOP_LEFT))
-                    field.put(Pos(it.x + 1, it.y + 1), BlockBigBomb(BlockBigBomb.Position.TOP_RIGHT))
-                    changeState(StateMoving())
+                    field[Pos(it.x, it.y)] = BlockBigBomb(BlockBigBomb.Position.BOTTOM_LEFT)
+                    field[Pos(it.x + 1, it.y)] = BlockBigBomb(BlockBigBomb.Position.BOTTOM_RIGHT)
+                    field[Pos(it.x, it.y + 1)] = BlockBigBomb(BlockBigBomb.Position.TOP_LEFT)
+                    field[Pos(it.x + 1, it.y + 1)] = BlockBigBomb(BlockBigBomb.Position.TOP_RIGHT)
+                    stateManager.changeState(StateBeforeMoving())
                 }
                 bigBombList = ArrayList()
             } else bigBombTimer ++
+            acceptMoveInput()
         }
     }
 
     // BigBomb is size=-1
     class ExplosionData(val position: Pos, val size: Int) {}
     class CascadeData(val blocks: List<Pair<Pos, Block>>) {}
+    data class SpeedData(
+            val beforeMoving: Int,
+            val moveStart: Int,
+            val moveSpeed: Float,
+            val drop: Float,
+            val softDrop: Float,
+            val lock: Int,
+            val forceLock: Int,
+            val afterMoving: Int,
+            val count: Int,
+            val beforeExplosion: Int,
+            val explosion: Int,
+            val afterExplosion: Int,
+            val cascade: Float,
+            val afterCascade: Int,
+            val bigBomb: Int
+    )
 }

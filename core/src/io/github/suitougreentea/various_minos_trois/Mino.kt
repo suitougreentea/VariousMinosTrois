@@ -26,6 +26,13 @@ object MinoCoordinateHelper {
         3 -> Pos(size-1 - coordinate.y, coordinate.x)
         else -> throw IllegalArgumentException()
     }
+    fun getRotatedRectangle(minoId: Int, rotation: Int): Pair<Pos, Pos> {
+        val (size, coords) = MinoList.list[minoId]
+        val blockCoords = coords.map { MinoCoordinateHelper.getRotatedCoordinate(it, rotation, size) }
+        val xCoords = blockCoords.map { it.x }
+        val yCoords = blockCoords.map { it.y }
+        return Pair(Pos(xCoords.min() ?: 0, yCoords.min() ?: 0), Pos(xCoords.max() ?: size-1, yCoords.max() ?: size-1))
+    }
 }
 
 interface MinoDecorator {
