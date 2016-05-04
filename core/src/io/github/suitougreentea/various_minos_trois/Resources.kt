@@ -3,6 +3,7 @@ package io.github.suitougreentea.various_minos_trois
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.files.FileHandle
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
@@ -18,6 +19,7 @@ class Resources {
         val generator = FreeTypeFontGenerator(Gdx.files.internal("Inconsolata.otf"))
         val parameter = FreeTypeFontGenerator.FreeTypeFontParameter()
         parameter.size = 14
+        parameter.borderWidth = 1f
         debugFont14 = generator.generateFont(parameter)
         generator.dispose()
     }
@@ -39,6 +41,8 @@ class Resources {
     val seRotationFail = loadSE("se/rotation_fail.wav")
     val seLock = loadSE("se/lock.wav")
     val seBigBomb = loadSE("se/big_bomb.wav")
+    val seCount = loadSE("se/count.wav")
+    val seCascade = loadSE("se/cascade.wav")
 
     fun loadTexture(path: String): Texture {
         return Texture(path)

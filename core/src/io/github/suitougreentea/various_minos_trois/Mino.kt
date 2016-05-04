@@ -33,24 +33,6 @@ object MinoCoordinateHelper {
     }
 }
 
-interface MinoDecorator {
-    fun decorate(blockCoordinates: List<Pos>, minoId: Int): List<Pair<Pos, Block>>
-}
-
-class MinoDecoratorDefault(): MinoDecorator {
-    override fun decorate(blockCoordinates: List<Pos>, minoId: Int): List<Pair<Pos, Block>> {
-        val bombIndex = (Math.random() * blockCoordinates.size).toInt()
-        val color = (Math.random() * 36).toInt() + 1
-        return blockCoordinates.mapIndexed { i, pos ->
-            when(i) {
-                bombIndex -> Pair(pos, BlockBomb())
-                else -> Pair(pos, BlockNormal(color))
-                //else -> Pair(pos, BlockBomb())
-            }
-        }
-    }
-}
-
 object MinoList {
     val list = listOf(
         Pair(1, listOf(Pos(0, 0))),  // 0: 1

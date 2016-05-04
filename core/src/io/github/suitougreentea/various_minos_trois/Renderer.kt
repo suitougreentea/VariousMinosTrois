@@ -30,6 +30,8 @@ class Renderer(val game: VariousMinosTrois) {
     val seRotationFail = game.resources.seRotationFail
     val seLock = game.resources.seLock
     val seBigBomb = game.resources.seBigBomb
+    val seCount = game.resources.seCount
+    val seCascade = game.resources.seCascade
 
     val nextPositions = arrayOf(
             Pair(Pair(218, 468), 16),
@@ -52,7 +54,8 @@ class Renderer(val game: VariousMinosTrois) {
 
         g.field.map.filter { it.key.y < 22 }.forEach {
             val (dx, dy) = getBlockCoord(it.key)
-            renderBlock(b, it.value, dx, dy)
+            val (sx, sy) = getBlockSourceCoord(it.value, g.freezedLines.contains(it.key.y))
+            renderBlock(b, sx, sy, dx, dy)
         }
 
         nextPositions.forEachIndexed { i, e ->
@@ -159,27 +162,15 @@ class Renderer(val game: VariousMinosTrois) {
             */
         }
 
-        /*
-        s.begin(ShapeRenderer.ShapeType.Line)
-        g.explosionList.forEach {
-            val (cx, cy) = it.position
-            if(it.size == -1) {
-                val (dx, dy) = getBlockCoord(cx - 4, cy - 4)
-                val w = 10
-                val h = 10
-                s.color = Color.RED
-                s.rect(dx, dy, w * 16f, h * 16f)
-            } else {
-                val (bw, bh) = g.bombSize.get(it.size)
-                val (dx, dy) = getBlockCoord(cx - bw, cy - bh)
-                val w = bw * 2 + 1
-                val h = bh * 2 + 1
-                s.color = Color.RED
-                s.rect(dx, dy, w * 16f, h * 16f)
+        s.begin(ShapeRenderer.ShapeType.Filled)
+        g.countLines.reversed().forEachIndexed { i, e ->
+            if(i <= g.countLinesIndex) {
+                val (dx, dy) = getBlockCoord(0, e).let { Pair(it.first, it.second + 8f) }
+                s.color = Color.WHITE
+                s.rect(dx, dy, 160f, 2f)
             }
         }
         s.end()
-        */
 
         b.begin()
 
@@ -204,6 +195,8 @@ class Renderer(val game: VariousMinosTrois) {
             appendln("bigBomb: ${g.bigBombTimer}")
             appendln("chain: ${g.chain}")
             appendln("count: ${g.countTimer}")
+            appendln("countLinesIndex: ${g.countLinesIndex}")
+            appendln("countNumber: ${g.countNumber}")
             appendln("expSize: ${g.currentExplosionSize}")
         }
         fDebug14.draw(b, debugString, 400f, 584f)
@@ -224,6 +217,11 @@ class Renderer(val game: VariousMinosTrois) {
                 "rotation_fail" -> seRotationFail.play()
                 "lock" -> seLock.play()
                 "big_bomb" -> seBigBomb.play()
+                "count" -> {
+                    val pitch = Math.pow(2.0, g.countNumber / 12.0).toFloat()
+                    seCount.play(1f, pitch, 0f)
+                }
+                "cascade" -> seCascade.play()
             }
         }
         g.seQueue.clear()
@@ -240,8 +238,8 @@ class Renderer(val game: VariousMinosTrois) {
         batch.color = Color.WHITE
     }
 
-    fun getBlockSourceCoord(b: Block) = when(b) {
-        is BlockNormal -> Pair(b.color, 0)
+    fun getBlockSourceCoord(b: Block, freeze: Boolean = false) = when(b) {
+        is BlockNormal -> Pair(b.color, if(freeze) 1 else 0)
         is BlockBomb -> if(b.ignited) Pair(0, 3) else Pair(0, 2)
         is BlockBigBomb -> when(b.position) {
             BlockBigBomb.Position.BOTTOM_LEFT -> if(b.ignited) Pair(3, 3) else Pair(1, 3)
@@ -249,6 +247,10 @@ class Renderer(val game: VariousMinosTrois) {
             BlockBigBomb.Position.TOP_LEFT -> if(b.ignited) Pair(3, 2) else Pair(1, 2)
             BlockBigBomb.Position.TOP_RIGHT -> if(b.ignited) Pair(4, 2) else Pair(2, 2)
         }
+        is BlockWhite -> Pair(5 + b.level, if(freeze) 3 else 2)
+        is BlockWhiteUnbreakable -> Pair(10, if(freeze) 3 else 2)
+        is BlockBlack -> Pair(11 + b.level, if(freeze) 3 else 2)
+        is BlockBlackUnbreakable -> Pair(16, if(freeze) 3 else 2)
         else -> Pair(0, 0)
     }
 
