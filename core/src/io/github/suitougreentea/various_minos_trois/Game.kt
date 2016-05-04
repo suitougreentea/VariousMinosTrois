@@ -8,18 +8,16 @@ class Game(val input: Input, width: Int, height: Int) {
 
     val field = Field(width, height)
 
-    val minoRandomizer = MinoRandomizer()
-    val minoDecorator = MinoDecoratorDefault()
-    var currentMino = Mino(minoRandomizer.next(), minoDecorator)
+    val minoRandomizer: MinoRandomizer = MinoRandomizerBag(setOf(4, 5, 6, 7, 8, 9, 10))
+    val minoColoring: MinoColoring = MinoColoringStandard()
+    val minoGenerator: MinoGenerator = MinoGeneratorInfinite(6, minoRandomizer, minoColoring)
+    //val minoGenerator: MinoGenerator = MinoGeneratorFinite()
+    var currentMino = Mino(0, listOf(Pair(Pos(0, 0), BlockNormal(0))))
     var minoX = 0
     var minoY = 20
     var minoR = 0
     var ghostY = 0
 
-    var nextMinos: MutableList<Mino> = arrayListOf()
-    init {
-        kotlin.repeat(6) { nextMinos.add(Mino(minoRandomizer.next(), minoDecorator)) }
-    }
     var holdMino: Mino? = null
     var alreadyHolded = false
 
@@ -29,12 +27,12 @@ class Game(val input: Input, width: Int, height: Int) {
             moveSpeed = 1f,
             drop = 22f,
             softDrop = 1f,
-            lock = 60,
-            forceLock = 180,
+            lock = 10000000,
+            forceLock = 10000000,
             afterMoving = 5,
             count = 0,
             beforeExplosion = 5,
-            explosion = 10,
+            explosion = 20,
             afterExplosion = 5,
             cascade = 22f,
             afterCascade = 10,
@@ -47,21 +45,14 @@ class Game(val input: Input, width: Int, height: Int) {
     var moveDirection = 0
     var moveTimer = 0
     var moveStack = 0f
-
     var dropStack = 0f
     var softDropStack = 0f
-
     var lockTimer = 0
-
     var forceLockTimer = 0
-
-    var explosionTimer = 0
-
-    var cascadeStack = 0f
-
-    var bigBombTimer = 0
-
     var countTimer = 0
+    var explosionTimer = 0
+    var cascadeStack = 0f
+    var bigBombTimer = 0
 
     var explosionList: MutableList<ExplosionData> = ArrayList()
     var cascadeList: MutableList<CascadeData> = ArrayList()
@@ -69,8 +60,12 @@ class Game(val input: Input, width: Int, height: Int) {
 
     val stateManager = StateManager(StateReady(30))
 
+    var countLines: MutableList<Int> = ArrayList()
+    var lastLines = 0
     var chain = 0
     var currentExplosionSize = 0
+
+    val seQueue: MutableSet<String> = HashSet()
 
     fun spawnNewMino(mino: Mino) {
         currentMino = mino
@@ -84,12 +79,23 @@ class Game(val input: Input, width: Int, height: Int) {
         forceLockTimer = 0
     }
 
-    fun attemptToMoveMino(dx: Int, dy: Int): Boolean {
-        if(GameUtil.hitTestMino(field, currentMino, minoX + dx, minoY + dy, minoR)) {
+    fun attemptToMoveMino(dx: Int): Boolean {
+        if(GameUtil.hitTestMino(field, currentMino, minoX + dx, minoY, minoR)) {
             return false
         } else {
             minoX += dx
-            minoY += dy
+            lockTimer = 0
+            seQueue.add("landing")
+            return true
+        }
+    }
+
+    fun attemptToDropMino(): Boolean {
+        if(GameUtil.hitTestMino(field, currentMino, minoX, minoY - 1, minoR)) {
+            return false
+        } else {
+            minoY -= 1
+            if(GameUtil.hitTestMino(field, currentMino, minoX, minoY - 1, minoR)) seQueue.add("landing")
             return true
         }
     }
@@ -100,6 +106,7 @@ class Game(val input: Input, width: Int, height: Int) {
             minoX += result.offset.x
             minoY += result.offset.y
             minoR = (minoR + 4 + dr) % 4
+            lockTimer = 0
             return true
         } else {
             return false
@@ -113,8 +120,7 @@ class Game(val input: Input, width: Int, height: Int) {
             val currentHoldMino = holdMino
             if(currentHoldMino == null) {
                 holdMino = currentMino
-                currentMino = nextMinos.removeAt(0)
-                nextMinos.add(Mino(minoRandomizer.next(), minoDecorator))
+                currentMino = minoGenerator.poll()!!
             } else {
                 holdMino = currentMino
                 spawnNewMino(currentHoldMino)
@@ -126,6 +132,7 @@ class Game(val input: Input, width: Int, height: Int) {
 
     fun lockMino() {
         currentMino.getRotatedBlocks(minoR).forEach { field[Pos(minoX + it.first.x, minoY + it.first.y)] = it.second }
+        seQueue.add("lock")
     }
 
     fun update() {
@@ -227,34 +234,45 @@ class Game(val input: Input, width: Int, height: Int) {
     inner class StateMoving: State {
         override fun enter() {
             super.enter()
-            nextMinos.add(Mino(minoRandomizer.next(), minoDecorator))
-            spawnNewMino(nextMinos.removeAt(0))
+            val newMino = minoGenerator.poll()
+            if(newMino == null) {
+                throw UnsupportedOperationException("GameOver")
+            }
+            spawnNewMino(newMino)
             alreadyHolded = false
-            if(input.c.isDown && !input.c.isPressed) attemptToHoldMino()
+            if(input.c.isDown && !input.c.isPressed) {
+                if(attemptToHoldMino()) seQueue.add("hold")
+            }
             if(input.a.isDown && !input.a.isPressed) {
-                attemptToRotateMino(-1)
+                if(attemptToRotateMino(-1)) seQueue.add("init_rotation")
             }
             if(input.b.isDown && !input.b.isPressed) {
-                attemptToRotateMino(+1)
+                if(attemptToRotateMino(+1)) seQueue.add("init_rotation")
             }
             chain = 0
         }
         override fun update() {
-            if(input.a.isPressed) attemptToRotateMino(-1)
-            if(input.b.isPressed) attemptToRotateMino(+1)
-            if(input.c.isPressed) attemptToHoldMino()
+            if(input.a.isPressed) {
+                if(attemptToRotateMino(-1)) seQueue.add("rotation") else seQueue.add("rotation_fail")
+            }
+            if(input.b.isPressed) {
+                if(attemptToRotateMino(+1)) seQueue.add("rotation") else seQueue.add("rotation_fail")
+            }
+            if(input.c.isPressed) {
+                if(attemptToHoldMino()) seQueue.add("hold")
+            }
 
             if(input.left.isPressed) {
                 moveDirection = -1
                 moveTimer = 0
                 moveStack = 0f
-                attemptToMoveMino(-1, 0)
+                attemptToMoveMino(-1)
             }
             if(input.right.isPressed) {
                 moveDirection = 1
                 moveTimer = 0
                 moveStack = 0f
-                attemptToMoveMino(+1, 0)
+                attemptToMoveMino(+1)
             }
 
             if(input.left.isDown && moveDirection == -1) {
@@ -262,7 +280,7 @@ class Game(val input: Input, width: Int, height: Int) {
                     moveStack += speed.moveSpeed
 
                     kotlin.repeat(moveStack.toInt(), {
-                        attemptToMoveMino(-1, 0)
+                        attemptToMoveMino(-1)
                     })
                     moveStack = moveStack % 1
                 } else moveTimer ++
@@ -273,7 +291,7 @@ class Game(val input: Input, width: Int, height: Int) {
                     moveStack += speed.moveSpeed
 
                     kotlin.repeat(moveStack.toInt(), {
-                        attemptToMoveMino(+1, 0)
+                        attemptToMoveMino(+1)
                     })
                     moveStack = moveStack % 1
                 } else moveTimer ++
@@ -282,14 +300,14 @@ class Game(val input: Input, width: Int, height: Int) {
             if(input.down.isDown) {
                 softDropStack += speed.softDrop
                 kotlin.repeat(softDropStack.toInt(), {
-                    attemptToMoveMino(0, -1)
+                    attemptToDropMino()
                 })
                 softDropStack = softDropStack % 1
             } else softDropStack = 0f
 
             dropStack += speed.drop
             kotlin.repeat(dropStack.toInt(), {
-                attemptToMoveMino(0, -1)
+                attemptToDropMino()
             })
             dropStack = dropStack % 1
 
@@ -330,7 +348,7 @@ class Game(val input: Input, width: Int, height: Int) {
     inner class StateCounting(): State {
         override fun update() {
             if(countTimer == speed.count) {
-                // TODO
+                countLines.clear()
                 stateManager.changeState(
                         if(isExplodable()) StateBeforeExplosion()
                         else if(isCascadeNeeded()) StateCascade()
@@ -376,10 +394,12 @@ class Game(val input: Input, width: Int, height: Int) {
         }
         override fun update() {
             if(explosionTimer == 0) {
+                if(field.map.values.any { it is BlockBomb && it.ignited }) seQueue.add("explosion_small")
+                if(field.map.values.any { it is BlockBigBomb && it.ignited }) seQueue.add("explosion_big")
                 field.map.filterValues { it is BlockBomb && it.ignited }.forEach { explosionList.add(ExplosionData(it.key, currentExplosionSize)) }
                 field.map.filterValues { it is BlockBigBomb && it.position == BlockBigBomb.Position.BOTTOM_LEFT && it.ignited }.forEach { explosionList.add(ExplosionData(it.key, -1)) }
             }
-            if(explosionTimer == speed.explosion * 2/3) {
+            if(explosionTimer == speed.explosion * 1/3) {
                 explosionList.forEach {
                     val (cx, cy) = it.position
                     val (rx, ry) = if(it.size == -1) {
@@ -494,6 +514,7 @@ class Game(val input: Input, width: Int, height: Int) {
             }
             bigBombReservedList.forEach { field.remove(it) }
             bigBombTimer = 0
+            seQueue.add("big_bomb")
         }
         override fun update() {
             if(bigBombTimer == speed.bigBomb) {

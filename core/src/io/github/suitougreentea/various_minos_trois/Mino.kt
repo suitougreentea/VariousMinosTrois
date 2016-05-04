@@ -1,12 +1,10 @@
 package io.github.suitougreentea.various_minos_trois
 
-class Mino (val minoId: Int, decorator: MinoDecorator){
+class Mino (val minoId: Int, val blocks: List<Pair<Pos, Block>>){
     val size: Int
-    val blocks: List<Pair<Pos, Block>>
     init {
         val data = MinoList.list[minoId]
         size = data.first
-        blocks = decorator.decorate(data.second, minoId)
     }
 
     fun getRotatedBlocks(rotation: Int) = blocks.map { e -> Pair(MinoCoordinateHelper.getRotatedCoordinate(e.first, rotation, size), e.second) }
@@ -42,10 +40,11 @@ interface MinoDecorator {
 class MinoDecoratorDefault(): MinoDecorator {
     override fun decorate(blockCoordinates: List<Pos>, minoId: Int): List<Pair<Pos, Block>> {
         val bombIndex = (Math.random() * blockCoordinates.size).toInt()
+        val color = (Math.random() * 36).toInt() + 1
         return blockCoordinates.mapIndexed { i, pos ->
             when(i) {
                 bombIndex -> Pair(pos, BlockBomb())
-                else -> Pair(pos, BlockNormal(1))
+                else -> Pair(pos, BlockNormal(color))
                 //else -> Pair(pos, BlockBomb())
             }
         }

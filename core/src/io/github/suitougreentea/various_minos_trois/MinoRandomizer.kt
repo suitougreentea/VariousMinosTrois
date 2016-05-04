@@ -1,10 +1,32 @@
 package io.github.suitougreentea.various_minos_trois
 
-class MinoRandomizer {
-    var minoSet: Set<Int> = setOf(/*0, 1, 2, 3,*/ 4, 5, 6, 7, 8, 9, 10)
-    /*fun init(minoSet: Set[Int]) {
+import java.util.*
+
+interface MinoRandomizer {
+    fun newMinoSet(minoSet: Set<Int>)
+    fun getMinoSet(): Set<Int>
+    fun next(): Int
+    fun reset()
+}
+class MinoRandomizerBag(private var minoSet: Set<Int>): MinoRandomizer {
+    private var bag: MutableSet<Int> = HashSet(minoSet)
+
+    override fun getMinoSet(): Set<Int> = minoSet
+
+    override fun newMinoSet(minoSet: Set<Int>) {
         this.minoSet = minoSet
-    }*/
-    fun next() = minoSet.elementAt((Math.random() * minoSet.size).toInt())
-    fun reset() = {}
+        this.bag = HashSet(minoSet)
+    }
+
+    override fun next(): Int {
+        if(bag.size == 0) bag = HashSet(minoSet)
+        val list = bag.toList()
+        val result = list[(Math.random() * list.size).toInt()]
+        bag.remove(result)
+        return result
+    }
+
+    override fun reset() {
+        throw UnsupportedOperationException()
+    }
 }
