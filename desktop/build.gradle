@@ -1,6 +1,5 @@
 apply plugin: "java"
 
-sourceCompatibility = 1.6
 sourceSets.main.java.srcDirs = [ "src/" ]
 
 project.ext.mainClassName = "io.github.suitougreentea.various_minos_trois.desktop.DesktopLauncher"
