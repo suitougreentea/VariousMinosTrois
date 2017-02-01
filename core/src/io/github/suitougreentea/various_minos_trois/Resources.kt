@@ -1,6 +1,7 @@
 package io.github.suitougreentea.various_minos_trois
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.audio.Music
 import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Color
@@ -9,40 +10,43 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 
 class Resources {
-    val design = loadTexture("design.png")
-    val frame = loadTexture("frame.png")
-    val block = loadTexture("block.png")
-    val bomb = loadTexture("bomb.png")
+    val tDesign = loadTexture("design.png")
+    val tFrame = loadTexture("frame.png")
+    val tBlock = loadTexture("block.png")
+    val tBomb = loadTexture("bomb.png")
 
-    val debugFont14: BitmapFont
+    val tBackgrounds = (0..19).map { loadTexture("bg${it}.png") }
+
+    val fDebug14: BitmapFont
     init {
         val generator = FreeTypeFontGenerator(Gdx.files.internal("Inconsolata.otf"))
         val parameter = FreeTypeFontGenerator.FreeTypeFontParameter()
         parameter.size = 14
-        parameter.borderWidth = 1f
-        debugFont14 = generator.generateFont(parameter)
+        fDebug14 = generator.generateFont(parameter)
         generator.dispose()
     }
-    val font12: BitmapFont
+    val f12: BitmapFont
     init {
         val generator = FreeTypeFontGenerator(Gdx.files.internal("Koruri-Regular.ttf"))
         val parameter = FreeTypeFontGenerator.FreeTypeFontParameter()
         parameter.size = 12
-        font12 = generator.generateFont(parameter)
+        f12 = generator.generateFont(parameter)
         generator.dispose()
     }
 
-    val seLanding = loadSE("se/landing.wav")
-    val seExplosionSmall = loadSE("se/explosion_small.wav")
-    val seExplosionBig = loadSE("se/explosion_big.wav")
-    val seHold = loadSE("se/hold.wav")
-    val seInitRotation = loadSE("se/init_rotation.wav")
-    val seRotation = loadSE("se/rotation.wav")
-    val seRotationFail = loadSE("se/rotation_fail.wav")
-    val seLock = loadSE("se/lock.wav")
-    val seBigBomb = loadSE("se/big_bomb.wav")
-    val seCount = loadSE("se/count.wav")
-    val seCascade = loadSE("se/cascade.wav")
+    val sLanding = loadSE("se/landing.wav")
+    val sExplosionSmall = loadSE("se/explosion_small.wav")
+    val sExplosionBig = loadSE("se/explosion_big.wav")
+    val sHold = loadSE("se/hold.wav")
+    val sInitRotation = loadSE("se/init_rotation.wav")
+    val sRotation = loadSE("se/rotation.wav")
+    val sRotationFail = loadSE("se/rotation_fail.wav")
+    val sLock = loadSE("se/lock.wav")
+    val sBigBomb = loadSE("se/big_bomb.wav")
+    val sCount = loadSE("se/count.wav")
+    val sCascade = loadSE("se/cascade.wav")
+
+    val mPlay1 = loadBGM("bgm/play1.ogg")
 
     fun loadTexture(path: String): Texture {
         return Texture(path)
@@ -50,5 +54,9 @@ class Resources {
 
     fun loadSE(path: String): Sound {
         return Gdx.audio.newSound(FileHandle(path))
+    }
+
+    fun loadBGM(path: String): Music {
+        return Gdx.audio.newMusic(FileHandle(path))
     }
 }
