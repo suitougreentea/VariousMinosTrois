@@ -11,19 +11,19 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 
 class VariousMinosTrois: ApplicationAdapter() {
-    lateinit var resources: Resources
-    lateinit var screen: GameScreen
+  lateinit var resources: Resources
+  lateinit var screen: GameScreen
 
-    override fun create () {
-        resources = Resources()
-        screen = GameScreen(this)
-    }
+  override fun create () {
+    resources = Resources()
+    screen = GameScreen(this)
+  }
 
-    override fun render() {
-        Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+  override fun render() {
+    Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
+    Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        screen.render()
-    }
+    screen.render()
+  }
 }
 
