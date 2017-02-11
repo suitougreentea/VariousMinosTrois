@@ -37,35 +37,48 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
   override fun render(g: Game) {
     if(g !is BasicMinoGame) return
 
-    b.begin()
     renderBackground()
+    renderBehindFrame(g)
     renderFrame()
+    renderBehindField(g)
     renderField(g)
-    renderNextHold(g)
-
+    renderFieldBorder(g)
+    renderAfterField(g)
     renderActiveMino(g)
+    renderAfterActiveMino(g)
+    renderNextHold(g)
     renderInput(g)
-    renderDebugString(g) {}
-    b.end()
+    renderDebugString(g)
+    renderTopMost(g)
   }
 
   fun renderBackground() {
+    b.begin()
     b.draw(r.tBackgrounds[0], 0f, 0f)
 
     b.color = Color(1f, 1f, 1f, 0.2f)
     b.draw(r.tDesign, 0f, 0f)
     b.color = Color.WHITE
+    b.end()
   }
+
+  open fun renderBehindFrame(g: BasicMinoGame) {}
 
   fun renderFrame() {
+    b.begin()
     b.draw(r.tFrame, 152f, 72f)
+    b.end()
   }
 
+  open fun renderBehindField(g: BasicMinoGame) {}
+
   fun renderField(g: BasicMinoGame) {
+    b.begin()
     g.field.map.filter { it.key.y < 22 }.forEach {
       val (dx, dy) = getBlockCoord(it.key)
       renderBlock(b, it.value, dx, dy)
     }
+    b.end()
   }
 
   fun renderBlock(batch: SpriteBatch, b: Block, x: Float, y: Float, s: Int = 16, t: Float = 1f) {
@@ -79,6 +92,13 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     batch.color = Color.WHITE
   }
 
+  fun renderFieldBorder(g: BasicMinoGame) {
+    s.begin(ShapeRenderer.ShapeType.Line)
+    s.end()
+  }
+
+  open fun renderAfterField(g: BasicMinoGame) {}
+
   fun getBlockCoord(x: Int, y: Int) = Pair(168f + x * 16f, 88f + y * 16f)
 
   fun getBlockCoord(c: Pos) = getBlockCoord(c.x, c.y)
@@ -86,6 +106,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
   open fun getBlockSourceCoord(b: Block) = Pair(1, 0)
 
   fun renderNextHold(g: BasicMinoGame) {
+    b.begin()
     nextPositions.forEachIndexed { i, e ->
       if(g.minoBuffer.size > i) {
         val (ox, oy) = e.first
@@ -111,10 +132,12 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
         renderBlock(b, block, (ox + bx * size).toFloat(), (oy + by * size).toFloat(), size)
       }
     }
+    b.end()
   }
 
   fun renderActiveMino(g: BasicMinoGame) {
     val mino = g.currentMino ?: return
+    b.begin()
     if (g.stateManager.currentState is BasicMinoGame.StateMoving) {
       mino.getRotatedBlocks(g.minoR).forEach { e ->
         val (dx, dy) = getBlockCoord(g.minoX + e.first.x, g.ghostY + e.first.y)
@@ -146,14 +169,21 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
   s.end()
   */
     }
+    b.end()
   }
+
+  open fun renderAfterActiveMino(g: BasicMinoGame) {}
 
   fun prettifyBoolean(boolean: Boolean) = if(boolean) "*" else "."
   fun renderInput(g: BasicMinoGame) {
+    b.begin()
     r.fDebug14.draw(b, g.input.mapping.keys.map { e -> "%5s: %s %s %s".format(e.name, prettifyBoolean(e.isPressed), prettifyBoolean(e.isDown), prettifyBoolean(e.isReleased)) }.joinToString("\n"), 680f, 200f)
+    b.end()
   }
 
-  inline fun renderDebugString(g: BasicMinoGame, f: StringBuilder.() -> Unit) {
+  open fun renderTopMost(g: BasicMinoGame) {}
+
+  open fun getDebugString(g: BasicMinoGame): String {
     val currentState = g.stateManager.currentState
     val stringBuilder = StringBuilder()
     stringBuilder.apply {
@@ -172,8 +202,13 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
       appendln("forceLock: ${g.forceLockTimer}")
       appendln("cascade: ${g.cascadeStack}")
     }
-    stringBuilder.f()
-    r.fDebug14.draw(b, stringBuilder.toString(), 400f, 584f)
+    return stringBuilder.toString()
+  }
+
+  fun renderDebugString(g: BasicMinoGame) {
+    b.begin()
+    r.fDebug14.draw(b, getDebugString(g), 400f, 584f)
     r.fDebug14.draw(b, "${Gdx.graphics.framesPerSecond} FPS", 16f, 584f)
+    b.end()
   }
 }

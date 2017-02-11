@@ -11,15 +11,33 @@ import io.github.suitougreentea.various_minos_trois.game.bomb.GameBomb.*
 class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
   override fun render(g: Game) {
     if(g !is GameBomb) return
+    super.render(g)
+
+    g.seQueue.forEach {
+      when(it) {
+        "landing" -> r.sLanding.play()
+        "explosion_small" -> r.sExplosionSmall.play()
+        "explosion_big" -> r.sExplosionBig.play()
+        "hold" -> r.sHold.play()
+        "init_rotation" -> r.sInitRotation.play()
+        "rotation" -> r.sRotation.play()
+        "rotation_fail" -> r.sRotationFail.play()
+        "lock" -> r.sLock.play()
+        "big_bomb" -> r.sBigBomb.play()
+        "count" -> {
+          val pitch = Math.pow(2.0, g.countNumber / 12.0).toFloat()
+          r.sCount.play(1f, pitch, 0f)
+        }
+        "cascade" -> r.sCascade.play()
+      }
+    }
+    g.seQueue.clear()
+  }
+
+  override fun renderTopMost(g: BasicMinoGame) {
+    g as GameBomb
+
     b.begin()
-
-    renderBackground()
-    renderFrame()
-    renderField(g)
-    renderNextHold(g)
-
-    renderActiveMino(g)
-
     g.cascadeList.forEach {
       it.blocks.forEach {
         val (dx, dy) = getBlockCoord(it.first.x, it.first.y)
@@ -60,7 +78,6 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
       val (dx, dy) = getBlockCoord(it)
       b.draw(r.tBlock, dx, dy, 32f, 32f, t * 32, 64, 32, 32, false, false)
     }
-
     b.end()
 
     s.begin(ShapeRenderer.ShapeType.Filled)
@@ -73,48 +90,12 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
     }
     s.end()
 
-    b.begin()
-
-    val currentState = g.stateManager.currentState
-
-    renderInput(g)
-    renderDebugString(g) {
-      appendln("explosion: ${g.explosionTimer}")
-      appendln("bigBomb: ${g.bigBombTimer}")
-      appendln("chain: ${g.chain}")
-      appendln("count: ${g.countTimer}")
-      appendln("countLinesIndex: ${g.countLinesIndex}")
-      appendln("countNumber: ${g.countNumber}")
-      appendln("expSize: ${g.currentExplosionSize}")
-      appendln("bombed: ${g.bombedBlocks}")
-    }
-
     if(g is GameBombSurvival) {
+      b.begin()
       fun formatLevel(level: Int) = (level / 100).toString() + "." + "%02d".format(level % 100)
       r.fDebug14.draw(b, "${formatLevel(g.level)}/${g.nextLevel / 100}", 354f, 100f)
+      b.end()
     }
-
-    b.end()
-
-    g.seQueue.forEach {
-      when(it) {
-        "landing" -> r.sLanding.play()
-        "explosion_small" -> r.sExplosionSmall.play()
-        "explosion_big" -> r.sExplosionBig.play()
-        "hold" -> r.sHold.play()
-        "init_rotation" -> r.sInitRotation.play()
-        "rotation" -> r.sRotation.play()
-        "rotation_fail" -> r.sRotationFail.play()
-        "lock" -> r.sLock.play()
-        "big_bomb" -> r.sBigBomb.play()
-        "count" -> {
-          val pitch = Math.pow(2.0, g.countNumber / 12.0).toFloat()
-          r.sCount.play(1f, pitch, 0f)
-        }
-        "cascade" -> r.sCascade.play()
-      }
-    }
-    g.seQueue.clear()
   }
 
   override fun getBlockSourceCoord(b: Block) = when(b) {
@@ -131,6 +112,21 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
     is BlockBlack -> Pair(11 + b.level, if(false) 3 else 2)
     is BlockBlackUnbreakable -> Pair(16, if(false) 3 else 2)
     else -> Pair(0, 0)
+  }
+
+  override fun getDebugString(g: BasicMinoGame): String {
+    g as GameBomb
+    val b = StringBuilder()
+    b.appendln("explosion: ${g.explosionTimer}")
+    b.appendln("bigBomb: ${g.bigBombTimer}")
+    b.appendln("chain: ${g.chain}")
+    b.appendln("count: ${g.countTimer}")
+    b.appendln("countLinesIndex: ${g.countLinesIndex}")
+    b.appendln("countNumber: ${g.countNumber}")
+    b.appendln("expSize: ${g.currentExplosionSize}")
+    b.appendln("bombed: ${g.bombedBlocks}")
+
+    return super.getDebugString(g) + b.toString()
   }
 
   fun bombInterpolationA(t: Float) = Math.pow(t.toDouble(), 1/3.0).toFloat()

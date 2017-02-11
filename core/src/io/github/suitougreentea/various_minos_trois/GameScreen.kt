@@ -13,10 +13,10 @@ import java.util.*
 class GameScreen(val app: VariousMinosTrois) {
   val input = Input()
 
-  val renderer: Renderer = RendererBomb(app)
-  val game: Game = GameBombSurvival(input)
-  //val renderer: Renderer = RendererMagic(app)
-  //val game: Game = GameMagic(input)
+  //val renderer: Renderer = RendererBomb(app)
+  //val game: Game = GameBombSurvival(input)
+  val renderer: Renderer = RendererMagic(app)
+  val game: Game = GameMagic(input)
 
   init {
     game.init()
