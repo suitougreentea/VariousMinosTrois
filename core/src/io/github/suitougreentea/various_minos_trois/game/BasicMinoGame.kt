@@ -7,14 +7,12 @@ import java.util.*
 abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int): Game {
   val field = Field(width, height)
 
-  val minoRandomizer: MinoRandomizer = MinoRandomizerBag(setOf(0, 4, 5, 6, 7, 8, 9, 10))
-  val minoColoring: MinoColoring = MinoColoringStandard()
-  abstract val minoGenerator: MinoGenerator
+  abstract val minoBuffer: MinoBuffer
+  //val minoBuffer: MinoBuffer = MinoBufferFinite()
 
   var rotationSystem: RotationSystem = RotationSystemStandard()
   var spawnSystem: SpawnSystem = SpawnSystemStandard(width, 22)
 
-  //val minoGenerator: MinoGenerator = MinoGeneratorFinite()
   var currentMino: Mino? = null
   var minoX = 0
   var minoY = 20
@@ -32,7 +30,9 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
           softDrop = 1f,
           lock = 60,
           forceLock = 180,
-          afterMoving = 5
+          afterMoving = 5,
+          cascade = 22f,
+          afterCascade = 10
   )
 
   var moveDirection = 0
@@ -42,12 +42,15 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
   var softDropStack = 0f
   var lockTimer = 0
   var forceLockTimer = 0
+  var cascadeStack = 0f
 
   val stateManager = StateManager()
 
+  var cascadeList: MutableList<CascadeData> = ArrayList()
+
   val seQueue: MutableSet<String> = HashSet()
 
-  fun spawnNewMino(mino: Mino) {
+  open fun spawnNewMino(mino: Mino) {
     currentMino = mino
     val spawnData = spawnSystem.get(mino.minoId)
     minoX = spawnData.position.x
@@ -61,7 +64,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
 
   open fun newCycle() { }
 
-  fun attemptToMoveMino(dx: Int): Boolean {
+  open fun attemptToMoveMino(dx: Int): Boolean {
     val mino = currentMino ?: return false
     if(GameUtil.hitTestMino(field, mino, minoX + dx, minoY, minoR)) {
       return false
@@ -73,7 +76,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
     }
   }
 
-  fun attemptToDropMino(): Boolean {
+  open fun attemptToDropMino(): Boolean {
     val mino = currentMino ?: return false
     if(GameUtil.hitTestMino(field, mino, minoX, minoY - 1, minoR)) {
       return false
@@ -84,7 +87,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
     }
   }
 
-  fun attemptToRotateMino(dr: Int): Boolean {
+  open fun attemptToRotateMino(dr: Int): Boolean {
     val mino = currentMino ?: return false
     val result = rotationSystem.attempt(field, mino, minoX, minoY, minoR, dr)
     if(result.success) {
@@ -98,14 +101,14 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
     }
   }
 
-  fun attemptToHoldMino(): Boolean {
+  open fun attemptToHoldMino(): Boolean {
     if(alreadyHolded) {
       return false
     } else {
       val currentHoldMino = holdMino
       if(currentHoldMino == null) {
         holdMino = currentMino
-        currentMino = minoGenerator.poll()!!
+        currentMino = minoBuffer.poll()!!
       } else {
         holdMino = currentMino
         spawnNewMino(currentHoldMino)
@@ -146,6 +149,8 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
   open fun newStateBeforeMoving() = StateBeforeMoving()
   open fun newStateMoving() = StateMoving()
   open fun newStateAfterMoving() = StateAfterMoving()
+  open fun newStateCascade() = StateCascade()
+  open fun newStateAfterCascade() = StateAfterCascade()
 
   open inner class StateReady: StateWithTimer() {
     override val frames = 30
@@ -172,15 +177,15 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
       if(input.c.isDown && !input.c.isPressed) {
         val currentHoldMino = holdMino
         if(currentHoldMino == null) {
-          holdMino = minoGenerator.poll()
-          newMino = minoGenerator.poll()
+          holdMino = minoBuffer.poll()
+          newMino = minoBuffer.poll()
         } else {
-          holdMino = minoGenerator.poll()
+          holdMino = minoBuffer.poll()
           newMino = currentHoldMino
         }
         seQueue.add("hold")
       } else {
-        newMino = minoGenerator.poll()
+        newMino = minoBuffer.poll()
       }
 
       if(newMino == null) {
@@ -292,6 +297,85 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
     }
   }
 
+  open inner class StateCascade(): State {
+    override fun enter() {
+      super.enter()
+
+      cascadeList = getCurrentCascadeList()
+      field.clear()
+
+      cascadeList.filter { it.blocks.any { it.first.y == 0 } }.forEach { it.blocks.forEach { field[it.first] = it.second } }
+      cascadeList.removeAll { it.blocks.any { it.first.y == 0 } }
+      cascadeList.removeAll { it.blocks.any { it.second.fixed } }
+    }
+    override fun update() {
+      if(cascadeList.size == 0) {
+        // Linecount may be needed
+        stateManager.changeState(newStateAfterCascade())
+        return
+      }
+      cascadeStack += speed.cascade
+      repeat(cascadeStack.toInt(), {
+        val currentCascadeList = ArrayList(cascadeList)
+        cascadeList.removeAll {true}
+        currentCascadeList.forEach {
+          if(it.blocks.any { it.first.y == 0 || field.contains(Pos(it.first.x, it.first.y - 1)) }) {
+            it.blocks.forEach {
+              field[it.first] = it.second
+            }
+          } else {
+            cascadeList.add(CascadeData(it.blocks.map { Pair(Pos(it.first.x, it.first.y - 1), it.second) }))
+          }
+        }
+      })
+      cascadeStack %= 1
+      acceptMoveInput()
+    }
+    override fun leave() {
+      super.leave()
+      cascadeStack = 0f
+    }
+  }
+
+  open inner class StateAfterCascade: StateWithTimer() {
+    override val frames = speed.afterCascade
+    override val stateManager = this@BasicMinoGame.stateManager
+
+    override fun nextState(): State = newStateBeforeMoving()
+
+    override fun update() {
+      super.update()
+      acceptMoveInput()
+    }
+  }
+
+  open fun getCurrentCascadeList(): MutableList<CascadeData> {
+    val clonedFieldMap = HashMap(field.map)
+    val list: MutableList<CascadeData> = ArrayList()
+
+    fun getConnectedBlockSet(pos: Pos): List<Pair<Pos, Block>> {
+      val block = clonedFieldMap.get(pos)
+      if(block != null && block is Block) {
+        var blockList: List<Pair<Pos, Block>> = arrayListOf(Pair(pos, block))
+        clonedFieldMap.remove(pos)
+        if (clonedFieldMap.contains(Pos(pos.x + 1, pos.y))) blockList += getConnectedBlockSet(Pos(pos.x + 1, pos.y))
+        if (clonedFieldMap.contains(Pos(pos.x - 1, pos.y))) blockList += getConnectedBlockSet(Pos(pos.x - 1, pos.y))
+        if (clonedFieldMap.contains(Pos(pos.x, pos.y + 1))) blockList += getConnectedBlockSet(Pos(pos.x, pos.y + 1))
+        if (clonedFieldMap.contains(Pos(pos.x, pos.y - 1))) blockList += getConnectedBlockSet(Pos(pos.x, pos.y - 1))
+        return blockList
+      } else throw IllegalStateException()
+    }
+
+    while(clonedFieldMap.size != 0) {
+      val (position, _) = clonedFieldMap.entries.first()
+      list.add(CascadeData(getConnectedBlockSet(position)))
+    }
+
+    list.sortBy { it.blocks.minBy { it.first.y }?.first?.y ?: 0 }
+
+    return list
+  }
+
   override fun init() {
     stateManager.changeState(newStateReady())
   }
@@ -308,6 +392,10 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
           val softDrop: Float,
           val lock: Int,
           val forceLock: Int,
-          val afterMoving: Int
+          val afterMoving: Int,
+          val cascade: Float,
+          val afterCascade: Int
   )
+
+  class CascadeData(val blocks: List<Pair<Pos, Block>>)
 }

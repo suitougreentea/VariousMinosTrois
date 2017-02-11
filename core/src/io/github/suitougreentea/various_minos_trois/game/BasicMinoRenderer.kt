@@ -1,9 +1,11 @@
 package io.github.suitougreentea.various_minos_trois.game
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import io.github.suitougreentea.various_minos_trois.Block
+import io.github.suitougreentea.various_minos_trois.GameScreen
 import io.github.suitougreentea.various_minos_trois.Pos
 import io.github.suitougreentea.various_minos_trois.VariousMinosTrois
 
@@ -42,6 +44,8 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     renderNextHold(g)
 
     renderActiveMino(g)
+    renderInput(g)
+    renderDebugString(g) {}
     b.end()
   }
 
@@ -83,10 +87,10 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
 
   fun renderNextHold(g: BasicMinoGame) {
     nextPositions.forEachIndexed { i, e ->
-      if(g.minoGenerator.size > i) {
+      if(g.minoBuffer.size > i) {
         val (ox, oy) = e.first
         val size = e.second
-        val mino = g.minoGenerator[i]
+        val mino = g.minoBuffer[i]
         if(mino != null) {
           mino.blocks.forEach {
             val (bx, by) = it.first
@@ -142,5 +146,34 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
   s.end()
   */
     }
+  }
+
+  fun prettifyBoolean(boolean: Boolean) = if(boolean) "*" else "."
+  fun renderInput(g: BasicMinoGame) {
+    r.fDebug14.draw(b, g.input.mapping.keys.map { e -> "%5s: %s %s %s".format(e.name, prettifyBoolean(e.isPressed), prettifyBoolean(e.isDown), prettifyBoolean(e.isReleased)) }.joinToString("\n"), 680f, 200f)
+  }
+
+  inline fun renderDebugString(g: BasicMinoGame, f: StringBuilder.() -> Unit) {
+    val currentState = g.stateManager.currentState
+    val stringBuilder = StringBuilder()
+    stringBuilder.apply {
+      appendln(currentState.javaClass.simpleName)
+      if (currentState is StateWithTimer) appendln("-> ${currentState.timer} / ${currentState.frames}") else appendln()
+      appendln("mino: ${g.currentMino?.minoId}")
+      appendln("x: ${g.minoX}")
+      appendln("y: ${g.minoY}")
+      appendln("r: ${g.minoR}")
+      appendln("moveDir: ${g.moveDirection}")
+      appendln("moveTimer: ${g.moveTimer}")
+      appendln("moveStack: ${g.moveStack}")
+      appendln("dropStack: ${g.dropStack}")
+      appendln("softStack: ${g.softDropStack}")
+      appendln("lock: ${g.lockTimer}")
+      appendln("forceLock: ${g.forceLockTimer}")
+      appendln("cascade: ${g.cascadeStack}")
+    }
+    stringBuilder.f()
+    r.fDebug14.draw(b, stringBuilder.toString(), 400f, 584f)
+    r.fDebug14.draw(b, "${Gdx.graphics.framesPerSecond} FPS", 16f, 584f)
   }
 }

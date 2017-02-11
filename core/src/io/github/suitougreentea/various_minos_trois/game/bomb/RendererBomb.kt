@@ -77,22 +77,9 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
 
     val currentState = g.stateManager.currentState
 
-    val debugString = buildString {
-      appendln(currentState.javaClass.simpleName)
-      if(currentState is StateWithTimer) appendln("-> ${currentState.timer} / ${currentState.frames}") else appendln()
-      appendln("mino: ${g.currentMino?.minoId}")
-      appendln("x: ${g.minoX}")
-      appendln("y: ${g.minoY}")
-      appendln("r: ${g.minoR}")
-      appendln("moveDir: ${g.moveDirection}")
-      appendln("moveTimer: ${g.moveTimer}")
-      appendln("moveStack: ${g.moveStack}")
-      appendln("dropStack: ${g.dropStack}")
-      appendln("softStack: ${g.softDropStack}")
-      appendln("lock: ${g.lockTimer}")
-      appendln("forceLock: ${g.forceLockTimer}")
+    renderInput(g)
+    renderDebugString(g) {
       appendln("explosion: ${g.explosionTimer}")
-      appendln("cascade: ${g.cascadeStack}")
       appendln("bigBomb: ${g.bigBombTimer}")
       appendln("chain: ${g.chain}")
       appendln("count: ${g.countTimer}")
@@ -101,11 +88,6 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
       appendln("expSize: ${g.currentExplosionSize}")
       appendln("bombed: ${g.bombedBlocks}")
     }
-    r.fDebug14.draw(b, debugString, 400f, 584f)
-    r.fDebug14.draw(b, "${Gdx.graphics.framesPerSecond} FPS", 16f, 584f)
-
-    fun prettifyBoolean(boolean: Boolean) = if(boolean) "*" else "."
-    r.fDebug14.draw(b, g.input.mapping.keys.map { e -> "%5s: %s %s %s".format(e.name, prettifyBoolean(e.isPressed), prettifyBoolean(e.isDown), prettifyBoolean(e.isReleased)) }.joinToString("\n"), 680f, 200f)
 
     if(g is GameBombSurvival) {
       fun formatLevel(level: Int) = (level / 100).toString() + "." + "%02d".format(level % 100)

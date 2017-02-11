@@ -1,13 +1,14 @@
-package io.github.suitougreentea.various_minos_trois.rule
+package io.github.suitougreentea.various_minos_trois.game
 
 import io.github.suitougreentea.various_minos_trois.Mino
 import io.github.suitougreentea.various_minos_trois.MinoList
-import io.github.suitougreentea.various_minos_trois.game.MinoDecorator
+import io.github.suitougreentea.various_minos_trois.game.MinoGenerator
 import io.github.suitougreentea.various_minos_trois.rule.MinoColoring
 import io.github.suitougreentea.various_minos_trois.rule.MinoColoringStandard
+import io.github.suitougreentea.various_minos_trois.rule.MinoRandomizer
 import java.util.*
 
-interface MinoGenerator {
+interface MinoBuffer {
   operator fun get(index: Int): Mino?
   operator fun set(index: Int, mino: Mino)
   fun peek(): Mino?
@@ -16,10 +17,10 @@ interface MinoGenerator {
   val size: Int
 }
 
-class MinoGeneratorInfinite(override val size: Int, val randomizer: MinoRandomizer, val coloring: MinoColoring, val decorator: MinoDecorator): MinoGenerator {
+class MinoBufferInfinite(override val size: Int, val generator: MinoGenerator): MinoBuffer {
   val list: MutableList<Mino> = ArrayList()
   init {
-    kotlin.repeat(size) { offer() }
+    repeat(size) { offer() }
   }
 
   override fun get(index: Int) = list.getOrNull(index)
@@ -39,16 +40,14 @@ class MinoGeneratorInfinite(override val size: Int, val randomizer: MinoRandomiz
   }
 
   fun offer() {
-    val minoId = randomizer.next()
-    val colorId = coloring.getMinoColor(minoId)
-    list.add(decorator.getMino(minoId, colorId))
+    list.add(generator.newMino())
   }
 
   override fun isInfinite() = true
 }
 
-class MinoGeneratorFinite(override val size: Int, val randomizer: MinoRandomizer, val coloring: MinoColoring, val decorator: MinoDecorator): MinoGenerator {
-  val list: MutableList<Mino> = ArrayList(MinoGeneratorInfinite(size, randomizer, coloring, decorator).list)
+class MinoBufferFinite(override val size: Int, val generator: MinoGenerator, val randomizer: MinoRandomizer, val coloring: MinoColoring): MinoBuffer {
+  val list: MutableList<Mino> = ArrayList(MinoBufferInfinite(size, generator).list)
 
   override fun get(index: Int) = list.getOrNull(index)
 

@@ -2,15 +2,21 @@ package io.github.suitougreentea.various_minos_trois.game.bomb
 
 import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.game.*
-import io.github.suitougreentea.various_minos_trois.rule.MinoGeneratorInfinite
+import io.github.suitougreentea.various_minos_trois.game.MinoBufferInfinite
+import io.github.suitougreentea.various_minos_trois.rule.MinoColoringStandard
+import io.github.suitougreentea.various_minos_trois.rule.MinoRandomizerBag
 import java.util.*
 
 // TODO: フリーズ状態をBlockに含める
 open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
   val bombSize = arrayOf (Pair(3, 0), Pair(3, 1), Pair(3, 2), Pair(3, 3), Pair(4, 4), Pair(4, 4), Pair(5, 5), Pair(5, 5), Pair(6, 6), Pair(6, 6), Pair(7, 7), Pair(7, 7), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8))
 
-  val minoDecorator = object: MinoDecorator {
-    override fun getMino(minoId: Int, colorId: Int): Mino {
+  val minoRandomizer = MinoRandomizerBag(setOf(4, 5, 6, 7, 8, 9, 10))
+  val minoColoring = MinoColoringStandard()
+  val minoGenerator = object: MinoGenerator {
+    override fun newMino(): Mino {
+      val minoId = minoRandomizer.next()
+      val colorId = minoColoring.getMinoColor(minoId)
       val blockPositions = MinoList.list[minoId].second
       val bombIndex = (Math.random() * blockPositions.size).toInt()
       val blocks = blockPositions.mapIndexed { i, pos ->
@@ -24,25 +30,21 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
     }
   }
 
-  override val minoGenerator = MinoGeneratorInfinite(6, minoRandomizer, minoColoring, minoDecorator)
+  override val minoBuffer = MinoBufferInfinite(6, minoGenerator)
 
   var speedBomb = SpeedDataBomb(
           count = 10,
           beforeExplosion = 10,
           explosion = 10,
           afterExplosion = 5,
-          cascade = 22f,
-          afterCascade = 10,
           bigBomb = 10
   )
 
   var countTimer = 0
   var explosionTimer = 0
-  var cascadeStack = 0f
   var bigBombTimer = 0
 
   var explosionList: MutableList<ExplosionData> = ArrayList()
-  var cascadeList: MutableList<CascadeData> = ArrayList()
   var bigBombList: MutableList<Pos> = ArrayList()
 
   var countLines: MutableList<Int> = ArrayList()
@@ -77,32 +79,7 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
     }
   }
 
-  fun getCurrentCascadeList(): MutableList<CascadeData> {
-    val clonedFieldMap = HashMap(field.map)
-    val list: MutableList<CascadeData> = ArrayList()
-
-    fun getConnectedBlockSet(pos: Pos): List<Pair<Pos, BlockBase>> {
-      val block = clonedFieldMap.get(pos)
-      if(block != null && block is BlockBase) {
-        var blockList: List<Pair<Pos, BlockBase>> = arrayListOf(Pair(pos, block))
-        clonedFieldMap.remove(pos)
-        if (clonedFieldMap.contains(Pos(pos.x + 1, pos.y))) blockList += getConnectedBlockSet(Pos(pos.x + 1, pos.y))
-        if (clonedFieldMap.contains(Pos(pos.x - 1, pos.y))) blockList += getConnectedBlockSet(Pos(pos.x - 1, pos.y))
-        if (clonedFieldMap.contains(Pos(pos.x, pos.y + 1))) blockList += getConnectedBlockSet(Pos(pos.x, pos.y + 1))
-        if (clonedFieldMap.contains(Pos(pos.x, pos.y - 1))) blockList += getConnectedBlockSet(Pos(pos.x, pos.y - 1))
-        return blockList
-      } else throw IllegalStateException()
-    }
-
-    while(clonedFieldMap.size != 0) {
-      val (position, block) = clonedFieldMap.entries.first()
-      list.add(CascadeData(getConnectedBlockSet(position)))
-    }
-
-    return list
-  }
-
-  fun isCascadeNeeded() = getCurrentCascadeList().filter { it.blocks.all { it.first.y > 0 && !it.second.float } }.isNotEmpty()
+  fun isCascadeNeeded() = getCurrentCascadeList().filter { it.blocks.all { it.first.y > 0 && !it.second.fixed } }.isNotEmpty()
 
   open inner class StateBeforeMoving: BasicMinoGame.StateBeforeMoving() {
     override fun enter() {
@@ -120,16 +97,14 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
   open fun newStateBeforeExplosion() = StateBeforeExplosion()
   open fun newStateExplosion() = StateExplosion()
   open fun newStateAfterExplosion() = StateAfterExplosion()
-  open fun newStateCascade() = StateCascade()
-  open fun newStateAfterCascade() = StateAfterCascade()
+  override fun newStateCascade() = StateCascade()
+  override fun newStateAfterCascade() = StateAfterCascade()
   open fun newStateMakingBigBomb() = StateMakingBigBomb()
 
-  open inner class StateMoving: BasicMinoGame.StateMoving() {
-    override fun enter() {
-      super.enter()
-      chain = 0
-      bombedBlocks = 0
-    }
+  override fun newCycle() {
+    super.newCycle()
+    chain = 0
+    bombedBlocks = 0
   }
 
   open inner class StateAfterMoving: BasicMinoGame.StateAfterMoving() {
@@ -277,48 +252,7 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
     }
   }
 
-  open inner class StateCascade(): State {
-    override fun enter() {
-      super.enter()
-
-      cascadeList = getCurrentCascadeList()
-      field.clear()
-
-      cascadeList.filter { it.blocks.any { it.first.y == 0 } }.forEach { it.blocks.forEach { field[it.first] = it.second } }
-      cascadeList.removeAll { it.blocks.any { it.first.y == 0 } }
-      cascadeList.removeAll { it.blocks.any { it.second.float } }
-    }
-    override fun update() {
-      if(cascadeList.size == 0) {
-        // Linecount may be needed
-        stateManager.changeState(newStateAfterCascade())
-        return
-      }
-      cascadeStack += speedBomb.cascade
-      repeat(cascadeStack.toInt(), {
-        val currentCascadeList = ArrayList(cascadeList)
-        cascadeList.removeAll {true}
-        currentCascadeList.forEach {
-          if(it.blocks.any { it.first.y == 0 || field.contains(Pos(it.first.x, it.first.y - 1)) }) {
-            it.blocks.forEach {
-              field[it.first] = it.second
-            }
-          } else {
-            cascadeList.add(CascadeData(it.blocks.map { Pair(Pos(it.first.x, it.first.y - 1), it.second) }))
-          }
-        }
-      })
-      cascadeStack %= 1
-      acceptMoveInput()
-    }
-    override fun leave() {
-      super.leave()
-      cascadeStack = 0f
-    }
-  }
-
-  open inner class StateAfterCascade: StateWithTimer() {
-    override val frames = speedBomb.afterCascade
+  open inner class StateAfterCascade: BasicMinoGame.StateAfterCascade() {
     override val stateManager = this@GameBomb.stateManager
 
     override fun nextState() = if(isExplodable()) newStateCounting()
@@ -369,42 +303,33 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
 
   // BigBomb is size=-1
   class ExplosionData(val position: Pos, val size: Int) {}
-  class CascadeData(val blocks: List<Pair<Pos, BlockBase>>) {}
 
-  interface BlockBase: Block {
-    val float: Boolean
+  open class BlockBase: Block {
+    override var fixed = false
   }
-  class BlockNormal(val color: Int): BlockBase {
-    override val float = false
-  }
+  class BlockNormal(val color: Int): BlockBase()
 
-  class BlockBomb: BlockBase {
-    override val float = false
+  class BlockBomb: BlockBase() {
     var ignited = false
   }
 
-  class BlockBigBomb(val position: Position): BlockBase {
+  class BlockBigBomb(val position: Position): BlockBase() {
     enum class Position {
       BOTTOM_LEFT, BOTTOM_RIGHT, TOP_LEFT, TOP_RIGHT
     }
-    override val float = false
     var ignited = false
   }
 
-  class BlockWhite(var level: Int): BlockBase {
-    override val float = false
+  class BlockWhite(var level: Int): BlockBase()
+
+  class BlockWhiteUnbreakable(): BlockBase()
+
+  class BlockBlack(var level: Int): BlockBase() {
+    override var fixed = true
   }
 
-  class BlockWhiteUnbreakable(): BlockBase {
-    override val float = false
-  }
-
-  class BlockBlack(var level: Int): BlockBase {
-    override val float = true
-  }
-
-  class BlockBlackUnbreakable(): BlockBase {
-    override val float = true
+  class BlockBlackUnbreakable(): BlockBase() {
+    override var fixed = true
   }
 
   data class SpeedDataBomb(
@@ -412,8 +337,6 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
           val beforeExplosion: Int,
           val explosion: Int,
           val afterExplosion: Int,
-          val cascade: Float,
-          val afterCascade: Int,
           val bigBomb: Int
   )
 }
