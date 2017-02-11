@@ -2,6 +2,8 @@ package io.github.suitougreentea.various_minos_trois.game
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.GL20.*
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import io.github.suitougreentea.various_minos_trois.Block
@@ -93,7 +95,18 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
   }
 
   fun renderFieldBorder(g: BasicMinoGame) {
-    s.begin(ShapeRenderer.ShapeType.Line)
+    s.begin(ShapeRenderer.ShapeType.Filled)
+    Gdx.gl.glEnable(GL_BLEND)
+    Gdx.gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    s.setColor(1f, 1f, 1f, 0.7f)
+    g.field.map.filter { it.key.y < 22 }.forEach {
+      val (x, y) = it.key
+      val (dx, dy) = getBlockCoord(it.key)
+      if(x - 1 >= 0 && !g.field.contains(Pos(x - 1, y))) s.rectLine(dx, dy, dx, dy + 16f, 2f)
+      if(x + 1 < g.width && !g.field.contains(Pos(x + 1, y))) s.rectLine(dx + 16f, dy, dx + 16f, dy + 16f, 2f)
+      if(y - 1 >= 0 && !g.field.contains(Pos(x, y - 1))) s.rectLine(dx, dy, dx + 16f, dy, 2f)
+      if(y + 1 < 22 && !g.field.contains(Pos(x, y + 1))) s.rectLine(dx, dy + 16f, dx + 16f, dy + 16f, 2f)
+    }
     s.end()
   }
 
@@ -137,8 +150,8 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
 
   fun renderActiveMino(g: BasicMinoGame) {
     val mino = g.currentMino ?: return
-    b.begin()
     if (g.stateManager.currentState is BasicMinoGame.StateMoving) {
+      b.begin()
       mino.getRotatedBlocks(g.minoR).forEach { e ->
         val (dx, dy) = getBlockCoord(g.minoX + e.first.x, g.ghostY + e.first.y)
         renderBlock(b, e.second, dx, dy, t = 0.5f)
@@ -148,6 +161,19 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
         val (dx, dy) = getBlockCoord(g.minoX + e.first.x, g.minoY + e.first.y)
         renderBlock(b, e.second, dx, dy)
       }
+      b.end()
+
+      s.begin(ShapeRenderer.ShapeType.Filled)
+      Gdx.gl.glEnable(GL_BLEND)
+      Gdx.gl.glBlendFunc(GL_ONE, GL_ONE)
+      val t = (1f - g.lockTimer.toFloat() / g.speed.lock) * 0.2f
+      s.setColor(t, t, t, 1f)
+      mino.getRotatedBlocks(g.minoR).forEach { e ->
+        val (dx, dy) = getBlockCoord(g.minoX + e.first.x, g.minoY + e.first.y)
+        s.rect(dx, dy, 16f, 16f)
+      }
+      s.end()
+      Gdx.gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
       /*
   s.begin(ShapeRenderer.ShapeType.Line)
@@ -169,7 +195,6 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
   s.end()
   */
     }
-    b.end()
   }
 
   open fun renderAfterActiveMino(g: BasicMinoGame) {}
