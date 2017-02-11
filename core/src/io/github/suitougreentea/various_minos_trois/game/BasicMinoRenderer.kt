@@ -47,6 +47,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     renderFieldBorder(g)
     renderAfterField(g)
     renderActiveMino(g)
+    renderLockEffect(g)
     renderAfterActiveMino(g)
     renderNextHold(g)
     renderInput(g)
@@ -197,6 +198,22 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     }
   }
 
+  fun renderLockEffect(g: BasicMinoGame) {
+    if(g.lockRenderTimer >= 0) {
+      s.begin(ShapeRenderer.ShapeType.Filled)
+      Gdx.gl.glEnable(GL_BLEND)
+      Gdx.gl.glBlendFunc(GL_ONE, GL_ONE)
+      val t = (1f - g.lockRenderTimer.toFloat() / 4) * 0.6f
+      s.setColor(t, t, t, 1f)
+      g.lockRenderList.forEach { p ->
+        val (dx, dy) = getBlockCoord(p)
+        s.rect(dx, dy, 16f, 16f)
+      }
+      s.end()
+      Gdx.gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    }
+  }
+
   open fun renderAfterActiveMino(g: BasicMinoGame) {}
 
   fun prettifyBoolean(boolean: Boolean) = if(boolean) "*" else "."
@@ -226,6 +243,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
       appendln("lock: ${g.lockTimer}")
       appendln("forceLock: ${g.forceLockTimer}")
       appendln("cascade: ${g.cascadeStack}")
+      appendln("lockRenderTimer: ${g.lockRenderTimer}")
     }
     return stringBuilder.toString()
   }

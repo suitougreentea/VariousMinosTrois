@@ -43,6 +43,9 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
   var lockTimer = 0
   var forceLockTimer = 0
   var cascadeStack = 0f
+  var lockRenderTimer = -1
+
+  var lockRenderList: List<Pos> = ArrayList()
 
   val stateManager = StateManager()
 
@@ -60,6 +63,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
     softDropStack = 0f
     lockTimer = 0
     forceLockTimer = 0
+    lockRenderTimer = -1
   }
 
   open fun newCycle() { }
@@ -121,6 +125,8 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
   fun lockMino() {
     val mino = currentMino ?: return
     mino.getRotatedBlocks(minoR).forEach { field[Pos(minoX + it.first.x, minoY + it.first.y)] = it.second }
+    lockRenderTimer = 0
+    lockRenderList = mino.getRotatedBlocks(minoR).map { Pos(minoX + it.first.x, minoY + it.first.y) }
     seQueue.add("lock")
   }
 
@@ -166,6 +172,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
     override fun nextState() = newStateMoving()
     override fun update() {
       super.update()
+      if(lockRenderTimer >= 0) lockRenderTimer ++
       acceptMoveInput()
     }
   }
@@ -293,6 +300,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
 
     override fun update() {
       super.update()
+      if(lockRenderTimer >= 0) lockRenderTimer ++
       acceptMoveInput()
     }
   }

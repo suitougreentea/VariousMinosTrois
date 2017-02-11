@@ -65,6 +65,7 @@ open class GameMagic(input: Input): BasicMinoGame(input, 10, 50) {
 
     override fun enter() {
       super.enter()
+      lockRenderTimer = -1
       chain ++
       val lineState = getLineState()
       frames = if(lineState.any { it == LineState.FILLED_RED || it == LineState.FILLED_GREEN || it == LineState.FILLED_BLUE || it == LineState.FILLED_RAINBOW || it == LineState.FILLED_WHITE || it == LineState.FILLED_BLACK }) speedMagic.beforeErasingMagic

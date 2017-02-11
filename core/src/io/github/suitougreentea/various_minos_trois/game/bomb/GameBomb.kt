@@ -145,6 +145,7 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
           }
         } else countTimer++
       }
+      if(lockRenderTimer >= 0) lockRenderTimer ++
       acceptMoveInput()
     }
 
@@ -180,11 +181,16 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
     }
     override fun update() {
       super.update()
+      if(lockRenderTimer >= 0) lockRenderTimer ++
       acceptMoveInput()
     }
   }
 
   open inner class StateExplosion(): State {
+    override fun enter() {
+      super.enter()
+      lockRenderTimer = -1
+    }
     override fun update() {
       if(explosionTimer == 0) {
         if(field.map.values.any { it is BlockBomb && it.ignited }) seQueue.add("explosion_small")
