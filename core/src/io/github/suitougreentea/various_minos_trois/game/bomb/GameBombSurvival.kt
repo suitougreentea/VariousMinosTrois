@@ -7,6 +7,7 @@ class GameBombSurvival(input: Input): GameBomb(input) {
   var nextLevel = 100
 
   override fun newCycle() {
+    super.newCycle()
     level += 1
   }
 
