@@ -94,6 +94,7 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
       b.begin()
       fun formatLevel(level: Int) = (level / 100).toString() + "." + "%02d".format(level % 100)
       r.fDebug14.draw(b, "${formatLevel(g.level)}/${g.nextLevel / 100}", 354f, 100f)
+      r.fDebug14.draw(b, "${g.score}", 354f, 150f)
       b.end()
     }
   }

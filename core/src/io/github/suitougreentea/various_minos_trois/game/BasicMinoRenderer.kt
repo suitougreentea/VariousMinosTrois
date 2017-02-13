@@ -39,9 +39,9 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
   override fun render(g: Game) {
     if(g !is BasicMinoGame) return
 
-    renderBackground()
+    renderBackground(g)
     renderBehindFrame(g)
-    renderFrame()
+    renderFrame(g)
     renderBehindField(g)
     renderField(g)
     renderFieldBorder(g)
@@ -50,14 +50,15 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     renderLockEffect(g)
     renderAfterActiveMino(g)
     renderNextHold(g)
+    renderStatus(g)
     renderInput(g)
     renderDebugString(g)
     renderTopMost(g)
   }
 
-  fun renderBackground() {
+  fun renderBackground(g: BasicMinoGame) {
     b.begin()
-    b.draw(r.tBackgrounds[0], 0f, 0f)
+    b.draw(r.tBackgrounds[g.background], 0f, 0f)
 
     b.color = Color(1f, 1f, 1f, 0.2f)
     b.draw(r.tDesign, 0f, 0f)
@@ -67,7 +68,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
 
   open fun renderBehindFrame(g: BasicMinoGame) {}
 
-  fun renderFrame() {
+  fun renderFrame(g: BasicMinoGame) {
     b.begin()
     b.draw(r.tFrame, 152f, 72f)
     b.end()
@@ -84,15 +85,13 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     b.end()
   }
 
-  fun renderBlock(batch: SpriteBatch, b: Block, x: Float, y: Float, s: Int = 16, t: Float = 1f) {
+  fun renderBlock(batch: SpriteBatch, b: Block, x: Float, y: Float, s: Int = 16) {
     val (sx, sy) = getBlockSourceCoord(b)
-    renderBlock(batch, sx, sy, x, y, s, t)
+    renderBlock(batch, sx, sy, x, y, s)
   }
 
-  fun renderBlock(batch: SpriteBatch, sx: Int, sy: Int, x: Float, y: Float, s: Int = 16, t: Float = 1f) {
-    batch.setColor(1f, 1f, 1f, t)
+  fun renderBlock(batch: SpriteBatch, sx: Int, sy: Int, x: Float, y: Float, s: Int = 16) {
     batch.draw(r.tBlock, x, y, s.toFloat(), s.toFloat(), sx * 16, sy * 16, 16, 16, false, false)
-    batch.color = Color.WHITE
   }
 
   fun renderFieldBorder(g: BasicMinoGame) {
@@ -140,11 +139,13 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     if(holdMino != null) {
       val (ox, oy) = holdPosition.first
       val size = holdPosition.second
+      if(g.alreadyHolded) b.setColor(0.5f, 0.5f, 0.5f, 1f)
       holdMino.blocks.forEach { f ->
         val (bx, by) = f.first
         val block = f.second
         renderBlock(b, block, (ox + bx * size).toFloat(), (oy + by * size).toFloat(), size)
       }
+      b.setColor(1f, 1f, 1f, 1f)
     }
     b.end()
   }
@@ -153,10 +154,12 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     val mino = g.currentMino ?: return
     if (g.stateManager.currentState is BasicMinoGame.StateMoving) {
       b.begin()
+      b.setColor(1f, 1f, 1f, 0.5f)
       mino.getRotatedBlocks(g.minoR).forEach { e ->
         val (dx, dy) = getBlockCoord(g.minoX + e.first.x, g.ghostY + e.first.y)
-        renderBlock(b, e.second, dx, dy, t = 0.5f)
+        renderBlock(b, e.second, dx, dy)
       }
+      b.setColor(1f, 1f, 1f, 1f)
 
       mino.getRotatedBlocks(g.minoR).forEach { e ->
         val (dx, dy) = getBlockCoord(g.minoX + e.first.x, g.minoY + e.first.y)
@@ -217,9 +220,23 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
   open fun renderAfterActiveMino(g: BasicMinoGame) {}
 
   fun prettifyBoolean(boolean: Boolean) = if(boolean) "*" else "."
+
+  fun prettifyTime(time: Int): String {
+    val min = time / 3600
+    val sec = (time / 60) % 60
+    val cent = (time % 60) * 100 / 60
+    return "%02d:%02d:%02d".format(min, sec, cent)
+  }
+
   fun renderInput(g: BasicMinoGame) {
     b.begin()
     r.fDebug14.draw(b, g.input.mapping.keys.map { e -> "%5s: %s %s %s".format(e.name, prettifyBoolean(e.isPressed), prettifyBoolean(e.isDown), prettifyBoolean(e.isReleased)) }.joinToString("\n"), 680f, 200f)
+    b.end()
+  }
+
+  open fun renderStatus(g: BasicMinoGame) {
+    b.begin()
+    r.fDebug14.draw(b, prettifyTime(g.gameTimer), 152f, 48f)
     b.end()
   }
 
@@ -231,6 +248,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     stringBuilder.apply {
       appendln(currentState.javaClass.simpleName)
       if (currentState is StateWithTimer) appendln("-> ${currentState.timer} / ${currentState.frames}") else appendln()
+      appendln("gameTimer: ${g.gameTimer}")
       appendln("mino: ${g.currentMino?.minoId}")
       appendln("x: ${g.minoX}")
       appendln("y: ${g.minoY}")
@@ -244,6 +262,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
       appendln("forceLock: ${g.forceLockTimer}")
       appendln("cascade: ${g.cascadeStack}")
       appendln("lockRenderTimer: ${g.lockRenderTimer}")
+      appendln("drop: ${g.drop}")
     }
     return stringBuilder.toString()
   }

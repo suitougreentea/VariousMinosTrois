@@ -14,25 +14,40 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
   val minoRandomizer = MinoRandomizerBag(setOf(4, 5, 6, 7, 8, 9, 10))
   val minoColoring = MinoColoringStandard()
   val minoGenerator = object: MinoGenerator {
+    var count = 0
     override fun newMino(): Mino {
       val minoId = minoRandomizer.next()
       val colorId = minoColoring.getMinoColor(minoId)
       val blockPositions = MinoList.list[minoId].second
       val bombIndex = (Math.random() * blockPositions.size).toInt()
-      val blocks = blockPositions.mapIndexed { i, pos ->
-        when(i) {
-          bombIndex -> Pair(pos, BlockBomb())
-          else -> Pair(pos, BlockNormal(colorId))
+
+      val blocks = if((count + allBombOffset) % allBombFrequency == 0) {
+        blockPositions.mapIndexed { _, pos -> Pair(pos, BlockBomb()) }
+      } else if((count + bombOffset) % bombFrequency == 0) {
+        blockPositions.mapIndexed { i, pos ->
+          when(i) {
+            bombIndex -> Pair(pos, BlockBomb())
+            else -> Pair(pos, BlockNormal(colorId))
+          }
         }
+      } else {
+        blockPositions.mapIndexed { _, pos -> Pair(pos, BlockNormal(colorId)) }
       }
+
+      count++
 
       return Mino(minoId, blocks)
     }
   }
 
+  var bombFrequency = 2
+  var bombOffset = 0
+  var allBombFrequency = 40
+  var allBombOffset = 1
+
   override val minoBuffer = MinoBufferInfinite(6, minoGenerator)
 
-  var speedBomb = SpeedDataBomb(
+  open var speedBomb = SpeedDataBomb(
           count = 10,
           beforeExplosion = 10,
           explosion = 10,
@@ -339,10 +354,10 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
   }
 
   data class SpeedDataBomb(
-          val count: Int,
-          val beforeExplosion: Int,
-          val explosion: Int,
-          val afterExplosion: Int,
-          val bigBomb: Int
+          var count: Int,
+          var beforeExplosion: Int,
+          var explosion: Int,
+          var afterExplosion: Int,
+          var bigBomb: Int
   )
 }

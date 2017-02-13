@@ -22,7 +22,9 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
   var holdMino: Mino? = null
   var alreadyHolded = false
 
-  var speed = SpeedDataBasicMino(
+  var background = 0
+
+  open var speed = SpeedDataBasicMino(
           beforeMoving = 5,
           moveStart = 10,
           moveSpeed = 1f,
@@ -45,6 +47,8 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
   var cascadeStack = 0f
   var lockRenderTimer = -1
 
+  var drop = 0
+
   var lockRenderList: List<Pos> = ArrayList()
 
   val stateManager = StateManager()
@@ -52,6 +56,9 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
   var cascadeList: MutableList<CascadeData> = ArrayList()
 
   val seQueue: MutableSet<String> = HashSet()
+
+  var enableTimer = false
+  var gameTimer = 0
 
   open fun spawnNewMino(mino: Mino) {
     currentMino = mino
@@ -64,6 +71,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
     lockTimer = 0
     forceLockTimer = 0
     lockRenderTimer = -1
+    drop = 0
   }
 
   open fun newCycle() { }
@@ -112,7 +120,9 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
       val currentHoldMino = holdMino
       if(currentHoldMino == null) {
         holdMino = currentMino
-        currentMino = minoBuffer.poll()!!
+        val newMino = minoBuffer.poll()!!
+        currentMino = newMino
+        spawnNewMino(newMino)
       } else {
         holdMino = currentMino
         spawnNewMino(currentHoldMino)
@@ -163,6 +173,10 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
     override val stateManager = this@BasicMinoGame.stateManager
 
     override fun nextState() = newStateBeforeMoving()
+    override fun leave() {
+      super.leave()
+      enableTimer = true
+    }
   }
 
   open inner class StateBeforeMoving: StateWithTimer() {
@@ -190,6 +204,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
           holdMino = minoBuffer.poll()
           newMino = currentHoldMino
         }
+        alreadyHolded = true
         seQueue.add("hold")
       } else {
         newMino = minoBuffer.poll()
@@ -207,6 +222,12 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
       if(input.b.isDown && !input.b.isPressed) {
         if(attemptToRotateMino(+1)) seQueue.add("init_rotation")
       }
+
+      dropStack += speed.drop
+      repeat(dropStack.toInt(), {
+        attemptToDropMino()
+      })
+      dropStack = dropStack % 1
     }
     override fun update() {
       val mino = currentMino ?: return
@@ -259,7 +280,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
       if(input.down.isDown) {
         softDropStack += speed.softDrop
         repeat(softDropStack.toInt(), {
-          attemptToDropMino()
+          if(attemptToDropMino()) drop ++
         })
         softDropStack = softDropStack % 1
       } else softDropStack = 0f
@@ -271,7 +292,10 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
       dropStack = dropStack % 1
 
       if(input.up.isPressed) {
-        while(!GameUtil.hitTestMino(field, mino, minoX, minoY - 1, minoR)) minoY --
+        while(!GameUtil.hitTestMino(field, mino, minoX, minoY - 1, minoR)) {
+          minoY --
+          drop ++
+        }
         lockMino()
         stateManager.changeState(newStateAfterMoving())
       }
@@ -390,19 +414,20 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
 
   override fun update() {
     stateManager.update()
+    if(enableTimer) gameTimer++
   }
 
   data class SpeedDataBasicMino(
-          val beforeMoving: Int,
-          val moveStart: Int,
-          val moveSpeed: Float,
-          val drop: Float,
-          val softDrop: Float,
-          val lock: Int,
-          val forceLock: Int,
-          val afterMoving: Int,
-          val cascade: Float,
-          val afterCascade: Int
+          var beforeMoving: Int,
+          var moveStart: Int,
+          var moveSpeed: Float,
+          var drop: Float,
+          var softDrop: Float,
+          var lock: Int,
+          var forceLock: Int,
+          var afterMoving: Int,
+          var cascade: Float,
+          var afterCascade: Int
   )
 
   class CascadeData(val blocks: List<Pair<Pos, Block>>)

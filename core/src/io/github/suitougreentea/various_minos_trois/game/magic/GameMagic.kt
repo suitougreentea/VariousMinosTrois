@@ -241,9 +241,9 @@ open class GameMagic(input: Input): BasicMinoGame(input, 10, 50) {
   class BlockBlack(): BlockBase()
 
   data class SpeedDataMagic(
-          val beforeErasingNormal: Int,
-          val beforeErasingChainNormal: Int,
-          val beforeErasingMagic: Int,
-          val erasing: Int
+          var beforeErasingNormal: Int,
+          var beforeErasingChainNormal: Int,
+          var beforeErasingMagic: Int,
+          var erasing: Int
   )
 }
