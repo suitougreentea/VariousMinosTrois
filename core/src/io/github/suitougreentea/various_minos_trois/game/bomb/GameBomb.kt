@@ -116,11 +116,13 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
   override fun newStateAfterCascade() = StateAfterCascade()
   open fun newStateMakingBigBomb() = StateMakingBigBomb()
 
-  override fun newCycle() {
-    super.newCycle()
+  override fun onNewCycle() {
+    super.onNewCycle()
     chain = 0
     bombedBlocks = 0
   }
+
+  open fun onLineFilled() {}
 
   open inner class StateAfterMoving: BasicMinoGame.StateAfterMoving() {
     override fun nextState() = if(getLineState().filter { it == GameBomb.LineState.FILLED_WITHOUT_BOMB || it == GameBomb.LineState.FILLED_WITH_BOMB }.size > freezedLines.size) newStateCounting()
@@ -166,6 +168,7 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
 
     override fun leave() {
       super.leave()
+      onLineFilled()
       countLines.clear()
       countLinesIndex = 0
       countTimer = 0
@@ -283,6 +286,14 @@ open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
     override fun update() {
       super.update()
       acceptMoveInput()
+    }
+
+    override fun leave() {
+      super.leave()
+      if(!isExplodable() && getLineState().filter { it == GameBomb.LineState.FILLED_WITHOUT_BOMB }.size > freezedLines.size) {
+        chain ++
+        onLineFilled()
+      }
     }
   }
 

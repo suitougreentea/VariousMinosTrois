@@ -1,0 +1,77 @@
+package io.github.suitougreentea.various_minos_trois.game
+
+class GradeData(val index: Int, val name: String, val size: Int)
+
+object GradeList {
+  val fullList = listOf(
+          GradeData( 0, "", 80),
+          GradeData( 1, "10", 80),
+          GradeData( 2, "9", 80),
+          GradeData( 3, "8", 80),
+          GradeData( 4, "7", 80),
+          GradeData( 5, "6", 80),
+          GradeData( 6, "5", 80),
+          GradeData( 7, "4", 80),
+          GradeData( 8, "3", 80),
+          GradeData( 9, "2", 80),
+          GradeData(10, "1", 80),
+          GradeData(11, "alpha", 80),
+          GradeData(12, "beta", 80),
+          GradeData(13, "gamma", 80),
+          GradeData(14, "delta", 80),
+          GradeData(15, "epsilon", 80),
+          GradeData(16, "zeta", 80),
+          GradeData(17, "eta", 80),
+          GradeData(18, "theta", 80),
+          GradeData(19, "iota", 80),
+          GradeData(20, "kappa", 80),
+          GradeData(21, "lambda", 80),
+          GradeData(22, "mu", 80),
+          GradeData(23, "nu", 80),
+          GradeData(24, "xi", 80),
+          GradeData(25, "omicron", 80),
+          GradeData(26, "pi", 80),
+          GradeData(27, "rho", 80),
+          GradeData(28, "sigma", 80),
+          GradeData(29, "tau", 80),
+          GradeData(30, "upsilon", 80),
+          GradeData(31, "phi", 80),
+          GradeData(32, "chi", 80),
+          GradeData(33, "psi", 80),
+          GradeData(34, "omega", 80),
+          GradeData(35, "Alpha", 80),
+          GradeData(36, "Beta", 80),
+          GradeData(37, "Gamma", 80),
+          GradeData(38, "Delta", 80),
+          GradeData(39, "Epsilon", 80),
+          GradeData(40, "Zeta", 80),
+          GradeData(41, "Eta", 80),
+          GradeData(42, "Theta", 80),
+          GradeData(43, "Iota", 80),
+          GradeData(44, "Kappa", 80),
+          GradeData(45, "Lambda", 80),
+          GradeData(46, "Mu", 80),
+          GradeData(47, "Nu", 80),
+          GradeData(48, "Xi", 80),
+          GradeData(49, "Omicron", 80),
+          GradeData(50, "Pi", 80),
+          GradeData(51, "Rho", 80),
+          GradeData(52, "Sigma", 80),
+          GradeData(53, "Tau", 80),
+          GradeData(54, "Upsilon", 80),
+          GradeData(55, "Phi", 80),
+          GradeData(56, "Chi", 80),
+          GradeData(57, "Psi", 80),
+          GradeData(58, "Omega", 80),
+          GradeData(59, "Expert", 120),
+          GradeData(60, "Expert+", 120),
+          GradeData(61, "Master", 120),
+          GradeData(62, "Master+", 120),
+          GradeData(63, "Ultimate", 120)
+  )
+  fun getList(list: List<Int>): List<GradeData> {
+    val result = mutableListOf<GradeData>()
+    list.forEach { result.add(fullList[it]) }
+    return result
+  }
+}

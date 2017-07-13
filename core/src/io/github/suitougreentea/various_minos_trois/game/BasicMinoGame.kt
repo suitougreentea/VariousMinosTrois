@@ -1,5 +1,6 @@
 package io.github.suitougreentea.various_minos_trois.game
 
+import com.sun.javafx.scene.control.skin.VirtualFlow
 import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.rule.*
 import java.util.*
@@ -59,6 +60,9 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
 
   var enableTimer = false
   var gameTimer = 0
+  var gameOver = false
+
+  val log: MutableList<String> = LinkedList()
 
   open fun spawnNewMino(mino: Mino) {
     currentMino = mino
@@ -72,9 +76,10 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
     forceLockTimer = 0
     lockRenderTimer = -1
     drop = 0
+    if(GameUtil.hitTestMino(field, mino, minoX, minoY, minoR)) gameOver = true
   }
 
-  open fun newCycle() { }
+  open fun onNewCycle() { }
 
   open fun attemptToMoveMino(dx: Int): Boolean {
     val mino = currentMino ?: return false
@@ -214,7 +219,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
         throw UnsupportedOperationException("GameOver")
       }
       spawnNewMino(newMino)
-      newCycle()
+      onNewCycle()
 
       if(input.a.isDown && !input.a.isPressed) {
         if(attemptToRotateMino(-1)) seQueue.add("init_rotation")
@@ -413,6 +418,7 @@ abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int):
   }
 
   override fun update() {
+    if(gameOver) return
     stateManager.update()
     if(enableTimer) gameTimer++
   }

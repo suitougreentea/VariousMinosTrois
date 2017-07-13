@@ -14,6 +14,8 @@ class Resources {
   val tFrame = loadTexture("frame.png")
   val tBlock = loadTexture("block.png")
   val tBomb = loadTexture("bomb.png")
+  val tGrade = loadTexture("grade.png")
+  val tNextBackground = loadTexture("next_background.png")
 
   val tBackgrounds = (0..19).map { loadTexture("bg${it}.png") }
 
@@ -33,6 +35,10 @@ class Resources {
     f12 = generator.generateFont(parameter)
     generator.dispose()
   }
+  val fRoman = BitmapFont(FileHandle("./roman.fnt"))
+  val fNum24 = BitmapFont(FileHandle("./num24x32.fnt"))
+  val fNum16 = BitmapFont(FileHandle("./num16x24.fnt"))
+  val fNum12 = BitmapFont(FileHandle("./num12x16.fnt"))
 
   val sLanding = loadSE("se/landing.wav")
   val sExplosionSmall = loadSE("se/explosion_small.wav")

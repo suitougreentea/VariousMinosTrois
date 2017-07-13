@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.GL20.*
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.utils.Align
 import io.github.suitougreentea.various_minos_trois.Block
 import io.github.suitougreentea.various_minos_trois.GameScreen
 import io.github.suitougreentea.various_minos_trois.Pos
@@ -70,6 +71,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
 
   fun renderFrame(g: BasicMinoGame) {
     b.begin()
+    b.draw(r.tNextBackground, 152f, 336f)
     b.draw(r.tFrame, 152f, 72f)
     b.end()
   }
@@ -236,7 +238,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
 
   open fun renderStatus(g: BasicMinoGame) {
     b.begin()
-    r.fDebug14.draw(b, prettifyTime(g.gameTimer), 152f, 48f)
+    r.fNum24.draw(b, prettifyTime(g.gameTimer), 152f, 48f, 0f, Align.topLeft, false)
     b.end()
   }
 
@@ -271,6 +273,22 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     b.begin()
     r.fDebug14.draw(b, getDebugString(g), 400f, 584f)
     r.fDebug14.draw(b, "${Gdx.graphics.framesPerSecond} FPS", 16f, 584f)
+    b.end()
+  }
+
+  fun renderGrade(id: Int, x: Float, y: Float, size: Float, leftAlign: Boolean) {
+    b.begin()
+    val grade = GradeList.fullList[id]
+    val sw = grade.size
+    val cx = if(leftAlign) x + sw / 2f else x - sw / 2f
+    val cy = y + 40f
+    val dw = sw * size
+    val dh = 80f * size
+    val dx = cx - dw / 2f
+    val dy = cy - dh / 2f
+    val sx = grade.index / 8 * 120
+    val sy = grade.index % 8 * 80
+    b.draw(r.tGrade, dx, dy, dw, dh, sx, sy, sw, 80, false, false)
     b.end()
   }
 }

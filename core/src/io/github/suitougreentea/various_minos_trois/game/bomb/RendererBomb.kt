@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.utils.Align
 import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.game.*
 import io.github.suitougreentea.various_minos_trois.game.bomb.GameBomb.*
@@ -93,9 +94,19 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
     if(g is GameBombSurvival) {
       b.begin()
       fun formatLevel(level: Int) = (level / 100).toString() + "." + "%02d".format(level % 100)
-      r.fDebug14.draw(b, "${formatLevel(g.level)}/${g.nextLevel / 100}", 354f, 100f)
-      r.fDebug14.draw(b, "${g.score}", 354f, 150f)
-      b.end()
+      r.fRoman.draw(b, "Level", 368f, 152f)
+      r.fNum16.draw(b, formatLevel(g.level), 368f, 128f)
+      r.fRoman.draw(b, "Grade", 136f, 456f, 0f, Align.topRight, false)
+      if(g is GameBombSurvivalMaster1) {
+        if (g.gradeIndex <= 32) {
+          r.fRoman.draw(b, "Next grade at", 136f, 304f, 0f, Align.topRight, false)
+          r.fNum16.draw(b, "${g.nextScore}", 136f, 280f, 0f, Align.topRight, false)
+        }
+        r.fRoman.draw(b, "Score", 136f, 264f, 0f, Align.topRight, false)
+        r.fNum16.draw(b, "${g.score}", 136f, 240f, 0f, Align.topRight, false)
+        b.end()
+        renderGrade(g.grades[g.gradeIndex].first, 136f, 360f, 1f, false)
+      }
     }
   }
 

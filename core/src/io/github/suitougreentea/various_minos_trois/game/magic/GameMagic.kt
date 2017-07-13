@@ -49,8 +49,8 @@ open class GameMagic(input: Input): BasicMinoGame(input, 10, 50) {
   var chain = 0
   var allCascade = false
 
-  override fun newCycle() {
-    super.newCycle()
+  override fun onNewCycle() {
+    super.onNewCycle()
     chain = 0
   }
 

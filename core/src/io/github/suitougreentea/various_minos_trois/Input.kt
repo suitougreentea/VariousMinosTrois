@@ -14,6 +14,35 @@ class Input {
   val d = InputButton("D")
   val e = InputButton("E")
   val f = InputButton("F")
+  /*
+  // Tetris Friends
+  val mapping = mapOf(
+          Pair(left, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.LEFT))),
+          Pair(right, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.RIGHT))),
+          Pair(up, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.SPACE))),
+          Pair(down, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.DOWN))),
+          Pair(a, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.Z))),
+          Pair(b, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.X), InputTypeKeyboard(Input.Keys.UP))),
+          Pair(c, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.SHIFT_LEFT))),
+          Pair(d, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.A))),
+          Pair(e, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.S))),
+          Pair(f, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.D)))
+  ) */
+  /*
+  // @thujopsis
+  val mapping = mapOf(
+          Pair(left, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.LEFT))),
+          Pair(right, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.RIGHT))),
+          Pair(up, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.UP))),
+          Pair(down, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.DOWN))),
+          Pair(a, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.A))),
+          Pair(b, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.D))),
+          Pair(c, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.SPACE))),
+          Pair(d, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.A))),
+          Pair(e, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.S))),
+          Pair(f, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.D)))
+  )
+  */
   val mapping = mapOf(
           Pair(left, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.LEFT))),
           Pair(right, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.RIGHT))),
