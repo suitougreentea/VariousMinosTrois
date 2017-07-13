@@ -88,20 +88,20 @@ class GameBombSurvivalMaster1(input: Input): GameBombSurvival(input) {
           Pair(800, 30),
           Pair(900, 35)
   )
-  // beforeMoving, lock, beforeExplosion, explosion, afterExplosion, bigbomb
+  // beforeMoving, lock, forceLock, beforeExplosion, explosion, afterExplosion, bigbomb
   val otherSpeed = listOf(
-          Pair(  0, listOf(28, 30, 8, 15, 10, 8)),
-          Pair(600, listOf(25, 30, 6, 12, 8, 8)),
-          Pair(700, listOf(20, 30, 6, 12, 8, 8)),
-          Pair(800, listOf(20, 30, 4, 10, 6, 6)),
-          Pair(900, listOf(16, 20, 4, 10, 6, 6))
+          Pair(  0, listOf(28, 30, 90, 8, 15, 10, 8)),
+          Pair(600, listOf(25, 30, 90, 6, 12, 8, 8)),
+          Pair(700, listOf(20, 30, 90, 6, 12, 8, 8)),
+          Pair(800, listOf(20, 30, 90, 4, 10, 6, 6)),
+          Pair(900, listOf(16, 20, 60, 4, 10, 6, 6))
   )
 
   override val speedUpdateFunctionList = listOf(
     generateSpeedUpdateFunction(speed::drop, dropSpeed),
     generateSpeedUpdateFunction(this::allBombFrequency, allBombFrequencyList),
     generateSpeedUpdateFunction(
-          listOf(speed::beforeMoving, speed::lock, speedBomb::beforeExplosion, speedBomb::explosion, speedBomb::afterExplosion, speedBomb::bigBomb),
+          listOf(speed::beforeMoving, speed::lock, speed::forceLock, speedBomb::beforeExplosion, speedBomb::explosion, speedBomb::afterExplosion, speedBomb::bigBomb),
           otherSpeed
     )
   )
