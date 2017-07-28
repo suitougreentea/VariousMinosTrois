@@ -2,6 +2,7 @@ package io.github.suitougreentea.various_minos_trois.game.bomb
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
@@ -10,6 +11,8 @@ import io.github.suitougreentea.various_minos_trois.game.*
 import io.github.suitougreentea.various_minos_trois.game.bomb.GameBomb.*
 
 class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
+  override val blockTexture = r.tBlockBomb
+
   override fun render(g: Game) {
     if(g !is GameBomb) return
     super.render(g)
@@ -42,7 +45,7 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
     g.cascadeList.forEach {
       it.blocks.forEach {
         val (dx, dy) = getBlockCoord(it.first.x, it.first.y)
-        renderBlock(b, it.second, dx, dy)
+        renderBlock(b, r.tBlockBomb, it.second, dx, dy)
       }
     }
 
@@ -77,7 +80,7 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
     g.bigBombList.forEach {
       val t = (g.bigBombTimer / g.speedBomb.bigBomb.toFloat() * 8).toInt().let { if(it >= 8) 7 else it }
       val (dx, dy) = getBlockCoord(it)
-      b.draw(r.tBlock, dx, dy, 32f, 32f, t * 32, 64, 32, 32, false, false)
+      b.draw(r.tBlockBomb, dx, dy, 32f, 32f, t * 32, 64, 32, 32, false, false)
     }
     b.end()
 

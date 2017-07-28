@@ -12,7 +12,8 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 class Resources {
   val tDesign = loadTexture("design.png")
   val tFrame = loadTexture("frame.png")
-  val tBlock = loadTexture("block.png")
+  val tBlockBomb = loadTexture("blockbomb.png")
+  val tBlockMagic = loadTexture("blockmagic.png")
   val tBomb = loadTexture("bomb.png")
   val tGrade = loadTexture("grade.png")
   val tNextBackground = loadTexture("next_background.png")

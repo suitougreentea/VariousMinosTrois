@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.GL20.*
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
@@ -26,6 +27,8 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
       //play()
     }
   }
+
+  open val blockTexture = r.tBlockBomb
 
   val nextPositions = arrayOf(
           Pair(Pair(218, 468), 16),
@@ -82,18 +85,18 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     b.begin()
     g.field.map.filter { it.key.y < 22 }.forEach {
       val (dx, dy) = getBlockCoord(it.key)
-      renderBlock(b, it.value, dx, dy)
+      renderBlock(b, blockTexture, it.value, dx, dy)
     }
     b.end()
   }
 
-  fun renderBlock(batch: SpriteBatch, b: Block, x: Float, y: Float, s: Int = 16) {
+  fun renderBlock(batch: SpriteBatch, texture: Texture, b: Block, x: Float, y: Float, s: Int = 16) {
     val (sx, sy) = getBlockSourceCoord(b)
-    renderBlock(batch, sx, sy, x, y, s)
+    renderBlock(batch, texture, sx, sy, x, y, s)
   }
 
-  fun renderBlock(batch: SpriteBatch, sx: Int, sy: Int, x: Float, y: Float, s: Int = 16) {
-    batch.draw(r.tBlock, x, y, s.toFloat(), s.toFloat(), sx * 16, sy * 16, 16, 16, false, false)
+  fun renderBlock(batch: SpriteBatch, texture: Texture, sx: Int, sy: Int, x: Float, y: Float, s: Int = 16) {
+    batch.draw(texture, x, y, s.toFloat(), s.toFloat(), sx * 16, sy * 16, 16, 16, false, false)
   }
 
   fun renderFieldBorder(g: BasicMinoGame) {
@@ -131,7 +134,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
           mino.blocks.forEach {
             val (bx, by) = it.first
             val block = it.second
-            renderBlock(b, block, (ox + bx * size).toFloat(), (oy + by * size).toFloat(), size)
+            renderBlock(b, blockTexture, block, (ox + bx * size).toFloat(), (oy + by * size).toFloat(), size)
           }
         }
       }
@@ -145,7 +148,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
       holdMino.blocks.forEach { f ->
         val (bx, by) = f.first
         val block = f.second
-        renderBlock(b, block, (ox + bx * size).toFloat(), (oy + by * size).toFloat(), size)
+        renderBlock(b, blockTexture, block, (ox + bx * size).toFloat(), (oy + by * size).toFloat(), size)
       }
       b.setColor(1f, 1f, 1f, 1f)
     }
@@ -159,13 +162,13 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
       b.setColor(1f, 1f, 1f, 0.5f)
       mino.getRotatedBlocks(g.minoR).forEach { e ->
         val (dx, dy) = getBlockCoord(g.minoX + e.first.x, g.ghostY + e.first.y)
-        renderBlock(b, e.second, dx, dy)
+        renderBlock(b, blockTexture, e.second, dx, dy)
       }
       b.setColor(1f, 1f, 1f, 1f)
 
       mino.getRotatedBlocks(g.minoR).forEach { e ->
         val (dx, dy) = getBlockCoord(g.minoX + e.first.x, g.minoY + e.first.y)
-        renderBlock(b, e.second, dx, dy)
+        renderBlock(b, blockTexture, e.second, dx, dy)
       }
       b.end()
 

@@ -8,6 +8,7 @@ import io.github.suitougreentea.various_minos_trois.game.Game
 import io.github.suitougreentea.various_minos_trois.game.magic.GameMagic.*
 
 class RendererMagic(app: VariousMinosTrois): BasicMinoRenderer(app) {
+  override val blockTexture = r.tBlockMagic
   var timer = 0
   var rainbowPhase = 0
   override fun render(g: Game) {
@@ -26,10 +27,10 @@ class RendererMagic(app: VariousMinosTrois): BasicMinoRenderer(app) {
   }
 
   override fun getBlockSourceCoord(b: Block) = when(b) {
-    is BlockColored -> Pair(b.color, b.magicColor + 8)
-    is BlockRainbow -> Pair(b.color, rainbowPhase + 11)
-    is BlockBlack -> Pair(5, 14)
-    else -> Pair(1, 8)
+    is BlockColored -> Pair(b.color, b.magicColor)
+    is BlockRainbow -> Pair(b.color, rainbowPhase + 3)
+    is BlockBlack -> Pair(5, 6)
+    else -> Pair(1, 0)
   }
 
   override fun getDebugString(g: BasicMinoGame): String {
