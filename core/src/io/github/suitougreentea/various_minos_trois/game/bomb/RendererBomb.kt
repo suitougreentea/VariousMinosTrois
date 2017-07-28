@@ -106,6 +106,8 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
         r.fNum16.draw(b, "${g.score}", 136f, 240f, 0f, Align.topRight, false)
         b.end()
         renderGrade(g.grades[g.gradeIndex].first, 136f, 360f, 1f, false)
+      } else {
+        b.end()
       }
     }
   }

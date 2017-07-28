@@ -2,10 +2,7 @@ package io.github.suitougreentea.various_minos_trois
 
 import io.github.suitougreentea.various_minos_trois.game.Game
 import io.github.suitougreentea.various_minos_trois.game.Renderer
-import io.github.suitougreentea.various_minos_trois.game.bomb.GameBomb
-import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombSurvival
-import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombSurvivalMaster1
-import io.github.suitougreentea.various_minos_trois.game.bomb.RendererBomb
+import io.github.suitougreentea.various_minos_trois.game.bomb.*
 import io.github.suitougreentea.various_minos_trois.game.magic.GameMagic
 import io.github.suitougreentea.various_minos_trois.game.magic.RendererMagic
 import java.util.*

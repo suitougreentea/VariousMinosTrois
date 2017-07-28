@@ -1,6 +1,5 @@
 package io.github.suitougreentea.various_minos_trois.game
 
-import com.sun.javafx.scene.control.skin.VirtualFlow
 import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.rule.*
 import java.util.*

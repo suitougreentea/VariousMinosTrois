@@ -62,7 +62,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     b.draw(r.tBackgrounds[g.background], 0f, 0f)
 
     b.color = Color(1f, 1f, 1f, 0.2f)
-    b.draw(r.tDesign, 0f, 0f)
+    //b.draw(r.tDesign, 0f, 0f)
     b.color = Color.WHITE
     b.end()
   }
