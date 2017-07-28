@@ -63,11 +63,10 @@ object GradeList {
           GradeData(56, "Chi", 80),
           GradeData(57, "Psi", 80),
           GradeData(58, "Omega", 80),
-          GradeData(59, "Expert", 120),
-          GradeData(60, "Expert+", 120),
-          GradeData(61, "Master", 120),
-          GradeData(62, "Master+", 120),
-          GradeData(63, "Ultimate", 120)
+          GradeData(59, "Heros", 108),
+          GradeData(60, "Hemitheos", 108),
+          GradeData(61, "Theos", 100),
+          GradeData(62, "Zeus", 92)
   )
   fun getList(list: List<Int>): List<GradeData> {
     val result = mutableListOf<GradeData>()
