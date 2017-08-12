@@ -1,0 +1,56 @@
+[
+  {
+    "left": [{
+      "type": "keyboard",
+      "code": 21
+    }],
+    "right": [{
+      "type": "keyboard",
+      "code": 22
+    }],
+    "up": [{
+      "type": "keyboard",
+      "code": 19
+    }],
+    "down": [{
+      "type": "keyboard",
+      "code": 20
+    }],
+    "a": [{
+      "type": "keyboard",
+      "code": 54
+    }],
+    "b": [{
+      "type": "keyboard",
+      "code": 52
+    }],
+    "c": [{
+      "type": "keyboard",
+      "code": 31
+    }],
+    "d": [{
+      "type": "keyboard",
+      "code": 29
+    }],
+    "e": [{
+      "type": "keyboard",
+      "code": 47
+    }],
+    "f": [{
+      "type": "keyboard",
+      "code": 32
+    }]
+  },
+  {
+    "left": [],
+    "right": [],
+    "up": [],
+    "down": [],
+    "a": [],
+    "b": [],
+    "c": [],
+    "d": [],
+    "e": [],
+    "f": []
+  }
+]

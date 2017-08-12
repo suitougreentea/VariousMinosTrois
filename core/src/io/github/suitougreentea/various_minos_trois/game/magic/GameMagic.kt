@@ -2,11 +2,12 @@ package io.github.suitougreentea.various_minos_trois.game.magic
 
 import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.game.*
-import io.github.suitougreentea.various_minos_trois.game.bomb.GameBomb
 import io.github.suitougreentea.various_minos_trois.rule.MinoColoringStandard
 import io.github.suitougreentea.various_minos_trois.rule.MinoRandomizerBag
 
-open class GameMagic(input: Input): BasicMinoGame(input, 10, 50) {
+open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
+  override fun getRequiredRenderer(app: VariousMinosTrois) = RendererMagic(app, player.playerNumber)
+
   var speedMagic = SpeedDataMagic(
           beforeErasingNormal = 0,
           beforeErasingMagic = 0,

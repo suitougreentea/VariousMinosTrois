@@ -4,7 +4,11 @@ import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.rule.*
 import java.util.*
 
-abstract class BasicMinoGame(val input: Input, val width: Int, val height: Int): Game {
+abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int): Game {
+  override fun getRequiredRenderer(app: VariousMinosTrois) = BasicMinoRenderer(app, player.playerNumber)
+
+  val input = player.input
+
   val field = Field(width, height)
 
   abstract val minoBuffer: MinoBuffer

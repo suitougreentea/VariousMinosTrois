@@ -2,9 +2,10 @@ package io.github.suitougreentea.various_minos_trois.game.bomb
 
 import io.github.suitougreentea.various_minos_trois.Input
 import com.badlogic.gdx.math.MathUtils
+import io.github.suitougreentea.various_minos_trois.Player
 import kotlin.comparisons.maxOf
 
-class GameBombSurvivalMaster1(input: Input): GameBombSurvival(input) {
+class GameBombSurvivalMaster1(player: Player): GameBombSurvival(player) {
   val grades = listOf(
           Pair( 1,      0),
           Pair( 2,    200),

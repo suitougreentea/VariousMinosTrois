@@ -7,7 +7,7 @@ import io.github.suitougreentea.various_minos_trois.game.BasicMinoRenderer
 import io.github.suitougreentea.various_minos_trois.game.Game
 import io.github.suitougreentea.various_minos_trois.game.magic.GameMagic.*
 
-class RendererMagic(app: VariousMinosTrois): BasicMinoRenderer(app) {
+class RendererMagic(app: VariousMinosTrois, playerNumber: Int): BasicMinoRenderer(app, playerNumber) {
   override val blockTexture = r.tBlockMagic
   var timer = 0
   var rainbowPhase = 0

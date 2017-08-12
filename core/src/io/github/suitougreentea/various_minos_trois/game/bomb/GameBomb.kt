@@ -8,7 +8,9 @@ import io.github.suitougreentea.various_minos_trois.rule.MinoRandomizerBag
 import java.util.*
 
 // TODO: フリーズ状態をBlockに含める
-open class GameBomb(input: Input): BasicMinoGame(input, 10, 50) {
+open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
+  override fun getRequiredRenderer(app: VariousMinosTrois) = RendererBomb(app, player.playerNumber)
+
   val bombSize = arrayOf (Pair(3, 0), Pair(3, 1), Pair(3, 2), Pair(3, 3), Pair(4, 4), Pair(4, 4), Pair(5, 5), Pair(5, 5), Pair(6, 6), Pair(6, 6), Pair(7, 7), Pair(7, 7), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8))
 
   val minoRandomizer = MinoRandomizerBag(setOf(4, 5, 6, 7, 8, 9, 10))

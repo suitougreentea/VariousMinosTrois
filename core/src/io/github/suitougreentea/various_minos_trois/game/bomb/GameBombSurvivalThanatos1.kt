@@ -1,8 +1,9 @@
 package io.github.suitougreentea.various_minos_trois.game.bomb
 
 import io.github.suitougreentea.various_minos_trois.Input
+import io.github.suitougreentea.various_minos_trois.Player
 
-class GameBombSurvivalThanatos1(input: Input): GameBombSurvival(input) {
+class GameBombSurvivalThanatos1(player: Player): GameBombSurvival(player) {
   val allBombFrequencyList = listOf(
           Pair(  0, 50)
   )

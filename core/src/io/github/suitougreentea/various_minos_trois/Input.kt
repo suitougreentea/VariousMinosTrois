@@ -1,9 +1,9 @@
 package io.github.suitougreentea.various_minos_trois
 
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
+import com.beust.klaxon.*
 
-class Input {
+class Input(jsonConfig: JsonObject) {
   val left = InputButton("LEFT")
   val right = InputButton("RIGHT")
   val up = InputButton("UP")
@@ -14,47 +14,22 @@ class Input {
   val d = InputButton("D")
   val e = InputButton("E")
   val f = InputButton("F")
-  /*
-  // Tetris Friends
-  val mapping = mapOf(
-          Pair(left, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.LEFT))),
-          Pair(right, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.RIGHT))),
-          Pair(up, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.SPACE))),
-          Pair(down, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.DOWN))),
-          Pair(a, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.Z))),
-          Pair(b, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.X), InputTypeKeyboard(Input.Keys.UP))),
-          Pair(c, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.SHIFT_LEFT))),
-          Pair(d, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.A))),
-          Pair(e, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.S))),
-          Pair(f, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.D)))
-  ) */
-  /*
-  // @thujopsis
-  val mapping = mapOf(
-          Pair(left, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.LEFT))),
-          Pair(right, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.RIGHT))),
-          Pair(up, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.UP))),
-          Pair(down, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.DOWN))),
-          Pair(a, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.A))),
-          Pair(b, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.D))),
-          Pair(c, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.SPACE))),
-          Pair(d, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.A))),
-          Pair(e, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.S))),
-          Pair(f, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.D)))
-  )
-  */
-  val mapping = mapOf(
-          Pair(left, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.LEFT))),
-          Pair(right, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.RIGHT))),
-          Pair(up, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.UP))),
-          Pair(down, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.DOWN))),
-          Pair(a, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.Z))),
-          Pair(b, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.X))),
-          Pair(c, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.C))),
-          Pair(d, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.A))),
-          Pair(e, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.S))),
-          Pair(f, arrayOf<InputType>(InputTypeKeyboard(Input.Keys.D)))
-  )
+
+  lateinit var mapping: Map<InputButton, Array<InputType>>/* = mapOf(
+          left to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.LEFT)),
+          right to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.RIGHT)),
+          up to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.UP)),
+          down to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.DOWN)),
+          a to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.Z)),
+          b to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.X)),
+          c to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.C)),
+          d to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.A)),
+          e to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.S)),
+          f to arrayOf<InputType>(InputTypeKeyboard(Input.Keys.D))
+  )*/
+  init {
+    jsonToMapping(jsonConfig)
+  }
 
   fun update() {
     mapping.forEach { e ->
@@ -66,9 +41,45 @@ class Input {
       e.key.isDown = down
     }
   }
+
+  fun mappingToJson() = json {
+    obj(*mapping.map {
+      it.key.jsonName to
+          array(it.value.map { obj(
+              *when(it) {
+                is InputTypeKeyboard -> { arrayOf("type" to "keyboard", "code" to it.keyCode)}
+                else -> throw IllegalArgumentException()
+              }
+          ) })
+    }.toTypedArray())
+  }
+
+  fun jsonToMapping(json: JsonObject) {
+    mapping = json.map {
+      when(it.key) {
+        "left" -> left
+        "right" -> right
+        "up" -> up
+        "down" -> down
+        "a" -> a
+        "b" -> b
+        "c" -> c
+        "d" -> d
+        "e" -> e
+        "f" -> f
+        else -> throw IllegalArgumentException()
+      } to (it.value as JsonArray<JsonObject>).map {
+        when(it.string("type")) {
+          "keyboard" -> InputTypeKeyboard(it.int("code") ?: 0)
+          else -> throw IllegalArgumentException()
+        }
+      }.toTypedArray<InputType>()
+    }.toMap()
+  }
 }
 
 class InputButton(val name: String) {
+  val jsonName = name.toLowerCase()
   var isPressed: Boolean = false
   var isDown: Boolean = false
   var isReleased: Boolean = false

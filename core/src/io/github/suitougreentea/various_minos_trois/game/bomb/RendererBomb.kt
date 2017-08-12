@@ -1,16 +1,13 @@
 package io.github.suitougreentea.various_minos_trois.game.bomb
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
 import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.game.*
 import io.github.suitougreentea.various_minos_trois.game.bomb.GameBomb.*
 
-class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
+class RendererBomb(app: VariousMinosTrois, playerNumber: Int): BasicMinoRenderer(app, playerNumber) {
   override val blockTexture = r.tBlockBomb
 
   override fun render(g: Game) {
@@ -97,18 +94,18 @@ class RendererBomb(app: VariousMinosTrois): BasicMinoRenderer(app) {
     if(g is GameBombSurvival) {
       b.begin()
       fun formatLevel(level: Int) = (level / 100).toString() + "." + "%02d".format(level % 100)
-      r.fRoman.draw(b, "Level", 368f, 152f)
-      r.fNum16.draw(b, formatLevel(g.level), 368f, 128f)
-      r.fRoman.draw(b, "Grade", 136f, 456f, 0f, Align.topRight, false)
+      r.fRoman16.draw(b, "Level", 264f, 104f)
+      r.fNum16.draw(b, formatLevel(g.level), 264f, 88f)
+      r.fRoman16.draw(b, "Grade", 264f, 312f)
       if(g is GameBombSurvivalMaster1) {
         if (g.gradeIndex <= 32) {
-          r.fRoman.draw(b, "Next grade at", 136f, 304f, 0f, Align.topRight, false)
-          r.fNum16.draw(b, "${g.nextScore}", 136f, 280f, 0f, Align.topRight, false)
+          r.fRoman16.draw(b, "Next grade at", 264f, 216f)
+          r.fNum16.draw(b, "${g.nextScore}", 264f, 200f)
         }
-        r.fRoman.draw(b, "Score", 136f, 264f, 0f, Align.topRight, false)
-        r.fNum16.draw(b, "${g.score}", 136f, 240f, 0f, Align.topRight, false)
+        r.fRoman16.draw(b, "Score", 264f, 160f)
+        r.fNum16.draw(b, "${g.score}", 264f, 144f)
         b.end()
-        renderGrade(g.grades[g.gradeIndex].first, 136f, 360f, 1f, false)
+        renderGrade(g.grades[g.gradeIndex].first, 264f, 224f, 1f, true)
       } else {
         b.end()
       }

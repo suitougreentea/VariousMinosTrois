@@ -1,6 +1,7 @@
-package io.github.suitougreentea.various_minos_trois.game
+package io.github.suitougreentea.various_minos_trois
 
 interface State {
+  fun init() {}
   fun enter() {}
   fun update()
   fun leave() {}
@@ -13,9 +14,13 @@ abstract class StateWithTimer: State {
 
   abstract fun nextState(): State
 
+  override fun init() {
+    if(frames == 0) stateManager.skipState(nextState())
+  }
+
   override fun update() {
+    timer ++
     if(timer == frames) stateManager.changeState(nextState())
-    else timer ++
   }
 }
 
@@ -23,16 +28,27 @@ class StateManager() {
   var currentState: State = object: State {
     override fun update() {}
   }
+  var nextState: State? = null
 
   fun update() {
-    val currentState = currentState
+    val nextState = nextState
+    if(nextState != null) {
+      currentState = nextState
+      currentState.enter()
+      this.nextState = null
+    }
+
     currentState.update()
   }
 
   fun changeState(newState: State) {
     currentState.leave()
-    currentState = newState
-    currentState.enter()
-    currentState.update()
+    nextState = newState
+    newState.init()
+  }
+
+  fun skipState(newState: State) {
+    nextState = newState
+    newState.init()
   }
 }

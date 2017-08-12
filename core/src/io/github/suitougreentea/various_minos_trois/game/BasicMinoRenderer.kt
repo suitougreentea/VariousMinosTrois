@@ -2,22 +2,19 @@ package io.github.suitougreentea.various_minos_trois.game
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.GL20.*
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
-import io.github.suitougreentea.various_minos_trois.Block
-import io.github.suitougreentea.various_minos_trois.GameScreen
-import io.github.suitougreentea.various_minos_trois.Pos
-import io.github.suitougreentea.various_minos_trois.VariousMinosTrois
+import io.github.suitougreentea.various_minos_trois.*
 
-open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
+open class BasicMinoRenderer(val app: VariousMinosTrois, val playerNumber: Int): Renderer {
+  val rt = app.renderTool
   val r = app.resources
 
-  val b = SpriteBatch()
-  val s = ShapeRenderer()
+  val b = app.renderTool.spriteBatch
+  val s = app.renderTool.shapeRenderer
   init {
     s.projectionMatrix = b.projectionMatrix
     s.transformMatrix = b.transformMatrix
@@ -31,21 +28,18 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
   open val blockTexture = r.tBlockBomb
 
   val nextPositions = arrayOf(
-          Pair(Pair(218, 468), 16),
-          Pair(Pair(304, 472), 8),
-          Pair(Pair(354, 472), 8),
-          Pair(Pair(354, 440), 8),
-          Pair(Pair(354, 408), 8),
-          Pair(Pair(354, 376), 8)
+          Pair(Pair(96, 464), 16),
+          Pair(Pair(192, 464), 8),
+          Pair(Pair(248, 464), 8),
+          Pair(Pair(248, 422), 8),
+          Pair(Pair(248, 380), 8),
+          Pair(Pair(248, 338), 8)
   )
-  val holdPosition = Pair(Pair(168, 472), 8)
+  val holdPosition = Pair(Pair(32, 464), 8)
 
   override fun render(g: Game) {
     if(g !is BasicMinoGame) return
 
-    renderBackground(g)
-    renderBehindFrame(g)
-    renderFrame(g)
     renderBehindField(g)
     renderField(g)
     renderFieldBorder(g)
@@ -58,25 +52,6 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
     renderInput(g)
     renderDebugString(g)
     renderTopMost(g)
-  }
-
-  fun renderBackground(g: BasicMinoGame) {
-    b.begin()
-    b.draw(r.tBackgrounds[g.background], 0f, 0f)
-
-    b.color = Color(1f, 1f, 1f, 0.2f)
-    //b.draw(r.tDesign, 0f, 0f)
-    b.color = Color.WHITE
-    b.end()
-  }
-
-  open fun renderBehindFrame(g: BasicMinoGame) {}
-
-  fun renderFrame(g: BasicMinoGame) {
-    b.begin()
-    b.draw(r.tNextBackground, 152f, 336f)
-    b.draw(r.tFrame, 152f, 72f)
-    b.end()
   }
 
   open fun renderBehindField(g: BasicMinoGame) {}
@@ -117,7 +92,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
 
   open fun renderAfterField(g: BasicMinoGame) {}
 
-  fun getBlockCoord(x: Int, y: Int) = Pair(168f + x * 16f, 88f + y * 16f)
+  fun getBlockCoord(x: Int, y: Int) = Pair(64f + x * 16f, 88f + y * 16f)
 
   fun getBlockCoord(c: Pos) = getBlockCoord(c.x, c.y)
 
@@ -241,7 +216,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois): Renderer {
 
   open fun renderStatus(g: BasicMinoGame) {
     b.begin()
-    r.fNum24.draw(b, prettifyTime(g.gameTimer), 152f, 48f, 0f, Align.topLeft, false)
+    r.fNum24.draw(b, prettifyTime(g.gameTimer), 56f, 48f, 0f, Align.topLeft, false)
     b.end()
   }
 
