@@ -60,8 +60,8 @@ open class GameBombSurvival(player: Player): GameBomb(player) {
 
     if(linesWithBomb == 0) {
       addLevel((basePoint * 0.5f).toInt(), true)
-      log.add("${level},${gameTimer},${lines},${chain},${drop},0,0")
-      addScore(getLineScore(level, lines, chain, drop, 0))
+      log.add("${level},${gameTimer},${lines},${chain},${droppedBlocks},0,0")
+      addScore(getLineScore(level, lines, chain, droppedBlocks, 0))
     } else {
       addLevel(basePoint, false)
     }
@@ -73,8 +73,8 @@ open class GameBombSurvival(player: Player): GameBomb(player) {
     override fun leave() {
       super.leave()
       addLevel((bombedBlocks * 0.04f).toInt(), true)
-      addScore(getLineScore(level, lines, chain, drop, bombedBlocks))
-      log.add("${level},${gameTimer},${lines},${chain},${drop},${bombedBlocks},0")
+      addScore(getLineScore(level, lines, chain, droppedBlocks, bombedBlocks))
+      log.add("${level},${gameTimer},${lines},${chain},${droppedBlocks},${bombedBlocks},0")
     }
   }
 

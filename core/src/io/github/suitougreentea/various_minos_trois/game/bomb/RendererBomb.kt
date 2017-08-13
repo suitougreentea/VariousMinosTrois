@@ -54,7 +54,7 @@ class RendererBomb(app: VariousMinosTrois, playerNumber: Int): BasicMinoRenderer
         -1 -> Pair(10, 10)
         else -> g.bombSize[it.size].let { Pair(it.first * 2 + 1, it.second * 2 + 1)}
       }
-      if(g.explosionTimer < g.speedBomb.explosion * 1/3) {
+      if(g.explosionTimer <= Math.ceil(g.speedBomb.explosion / 3.0).toInt()) {
         val t = g.explosionTimer / (g.speedBomb.explosion * 1/3f)
         val w = (1f + (mw - 1f) * bombInterpolationA(t)) * 16f
         val h = (1f + (mh - 1f) * bombInterpolationA(t)) * 16f

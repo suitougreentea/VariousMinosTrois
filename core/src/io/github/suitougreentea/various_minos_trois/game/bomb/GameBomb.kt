@@ -57,9 +57,9 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
           bigBomb = 10
   )
 
-  var countTimer = 0
-  var explosionTimer = 0
-  var bigBombTimer = 0
+  var countTimer = -1
+  var explosionTimer = -1
+  var bigBombTimer = -1
 
   var explosionList: MutableList<ExplosionData> = ArrayList()
   var bigBombList: MutableList<Pos> = ArrayList()
@@ -139,41 +139,42 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
     else if (isBigBombNeeded()) newStateMakingBigBomb()
     else newStateBeforeMoving()
 
-    override fun enter() {
+    override fun init() {
       countNumber = 0
       chain ++
       getLineState().forEachIndexed { i, e -> if(e == LineState.FILLED_WITHOUT_BOMB || e == LineState.FILLED_WITH_BOMB) countLines.add(i) }
-    }
-
-    override fun update() {
       if(speedBomb.count == 0) {
         seQueue.add("count")
         countNumber = chain + countLines.size - 2
-        stateManager.changeState(nextState())
-      } else {
-        if (countTimer == 0) {
-          seQueue.add("count")
-          countNumber = chain + countLinesIndex - 1
-        }
-        if (countTimer == speedBomb.count) {
-          if (countLinesIndex == countLines.size - 1) {
-            stateManager.changeState(nextState())
-          } else {
-            countLinesIndex++
-            countTimer = 0
-          }
-        } else countTimer++
+        stateManager.skipState(nextState())
       }
-      if(lockRenderTimer >= 0) lockRenderTimer ++
-      acceptMoveInput()
     }
 
-    override fun leave() {
-      super.leave()
+    override fun enter() {
+      countTimer = 0
+    }
+
+    override fun update() {
+      if(countTimer == 0 || countTimer == speedBomb.count) {
+        seQueue.add("count")
+        countNumber = chain + countLinesIndex - 1
+      }
+      countTimer = (countTimer % speedBomb.count) + 1
+      if (countTimer == speedBomb.count) {
+        if (countLinesIndex == countLines.size - 1) {
+          stateManager.changeState(nextState())
+        } else {
+          countLinesIndex ++
+        }
+      }
+    }
+
+    override fun leaveOrSkip() {
+      super.leaveOrSkip()
       onLineFilled()
       countLines.clear()
       countLinesIndex = 0
-      countTimer = 0
+      countTimer = -1
     }
   }
 
@@ -182,8 +183,8 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
     override val stateManager = this@GameBomb.stateManager
 
     override fun nextState() = newStateExplosion()
-    override fun enter() {
-      super.enter()
+    override fun init() {
+      super.init()
       getLineState().forEachIndexed { i, e -> if(e == LineState.FILLED_WITH_BOMB) {
         field.map.filter { it.key.y == i }.forEach {
           val (pos, block) = it
@@ -197,12 +198,6 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
           }
         }
       } }
-      currentExplosionSize = chain + getLineState().filter { it == LineState.FILLED_WITHOUT_BOMB || it == LineState.FILLED_WITH_BOMB }.size - 2
-    }
-    override fun update() {
-      super.update()
-      if(lockRenderTimer >= 0) lockRenderTimer ++
-      acceptMoveInput()
     }
   }
 
@@ -210,15 +205,19 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
     override fun enter() {
       super.enter()
       lockRenderTimer = -1
+      currentExplosionSize = chain + getLineState().filter { it == LineState.FILLED_WITHOUT_BOMB || it == LineState.FILLED_WITH_BOMB }.size - 2
+      explosionTimer = 0
     }
     override fun update() {
-      if(explosionTimer == 0) {
+      if(explosionTimer == 0 || explosionTimer == speedBomb.explosion) {
+        explosionList = ArrayList()
         if(field.map.values.any { it is BlockBomb && it.ignited }) seQueue.add("explosion_small")
         if(field.map.values.any { it is BlockBigBomb && it.ignited }) seQueue.add("explosion_big")
         field.map.filterValues { it is BlockBomb && it.ignited }.forEach { explosionList.add(ExplosionData(it.key, currentExplosionSize)) }
         field.map.filterValues { it is BlockBigBomb && it.position == BlockBigBomb.Position.BOTTOM_LEFT && it.ignited }.forEach { explosionList.add(ExplosionData(it.key, -1)) }
       }
-      if(explosionTimer == speedBomb.explosion * 1/3) {
+      explosionTimer = (explosionTimer % speedBomb.explosion) + 1
+      if(explosionTimer == Math.ceil(speedBomb.explosion / 3.0).toInt()) {
         val explosionPositions: MutableSet<Pos> = HashSet()
         explosionList.forEach {
           val (cx, cy) = it.position
@@ -256,11 +255,15 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
         }
       }
       if(explosionTimer == speedBomb.explosion) {
-        explosionTimer = 0
-        explosionList = ArrayList()
         if(!field.map.any { val block = it.value; (block is BlockBomb && block.ignited) || (block is BlockBigBomb && block.ignited) }) stateManager.changeState(newStateAfterExplosion())
-      } else explosionTimer ++
-      acceptMoveInput()
+      }
+    }
+
+    override fun leave() {
+      super.leave()
+      nextFrameTaskList.add(NextFrameTask({
+        explosionList = ArrayList()
+      }, false))
     }
   }
 
@@ -271,11 +274,6 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
     override fun nextState() = if(isCascadeNeeded()) newStateCascade()
     else if(isBigBombNeeded()) newStateMakingBigBomb()
     else newStateBeforeMoving()
-
-    override fun update() {
-      super.update()
-      acceptMoveInput()
-    }
   }
 
   open inner class StateAfterCascade: BasicMinoGame.StateAfterCascade() {
@@ -285,13 +283,8 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
     else if(isBigBombNeeded()) newStateMakingBigBomb()
     else newStateBeforeMoving()
 
-    override fun update() {
-      super.update()
-      acceptMoveInput()
-    }
-
-    override fun leave() {
-      super.leave()
+    override fun leaveOrSkip() {
+      super.leaveOrSkip()
       if(!isExplodable() && getLineState().filter { it == GameBomb.LineState.FILLED_WITHOUT_BOMB }.size > freezedLines.size) {
         chain ++
         onLineFilled()
@@ -300,8 +293,8 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
   }
 
   open inner class StateMakingBigBomb: State {
-    override fun enter() {
-      super.enter()
+    override fun init() {
+      super.init()
       val bigBombReservedList: MutableList<Pos> = ArrayList()
       // Sort: (0, 10), (1, 10), (0, 9), (1, 9) ...
       field.map.filterValues { it is BlockBomb }.keys.sortedWith(Comparator { a, b -> if (a.y == b.y) a.x - b.x else b.y - a.y }).forEach {
@@ -314,24 +307,30 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
       bigBombReservedList.forEach { field.remove(it) }
       bigBombTimer = 0
       seQueue.add("big_bomb")
+      if(speedBomb.bigBomb == 0) stateManager.skipState(newStateBeforeMoving())
     }
 
     override fun update() {
+      bigBombTimer ++
       if(bigBombTimer == speedBomb.bigBomb) {
-        bigBombList.forEach {
-          field[Pos(it.x, it.y)] = BlockBigBomb(BlockBigBomb.Position.BOTTOM_LEFT)
-          field[Pos(it.x + 1, it.y)] = BlockBigBomb(BlockBigBomb.Position.BOTTOM_RIGHT)
-          field[Pos(it.x, it.y + 1)] = BlockBigBomb(BlockBigBomb.Position.TOP_LEFT)
-          field[Pos(it.x + 1, it.y + 1)] = BlockBigBomb(BlockBigBomb.Position.TOP_RIGHT)
-        }
-        bigBombList = ArrayList()
         stateManager.changeState(newStateBeforeMoving())
-      } else bigBombTimer ++
-      acceptMoveInput()
+      }
     }
 
     override fun leave() {
       super.leave()
+      bigBombTimer = -1
+    }
+
+    override fun leaveOrSkip() {
+      super.leaveOrSkip()
+      bigBombList.forEach {
+        field[Pos(it.x, it.y)] = BlockBigBomb(BlockBigBomb.Position.BOTTOM_LEFT)
+        field[Pos(it.x + 1, it.y)] = BlockBigBomb(BlockBigBomb.Position.BOTTOM_RIGHT)
+        field[Pos(it.x, it.y + 1)] = BlockBigBomb(BlockBigBomb.Position.TOP_LEFT)
+        field[Pos(it.x + 1, it.y + 1)] = BlockBigBomb(BlockBigBomb.Position.TOP_RIGHT)
+      }
+      bigBombList = ArrayList()
     }
   }
 

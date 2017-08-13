@@ -250,7 +250,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois, val playerNumber: Int):
       appendln("forceLock: ${g.forceLockTimer}")
       appendln("cascade: ${g.cascadeStack}")
       appendln("lockRenderTimer: ${g.lockRenderTimer}")
-      appendln("drop: ${g.drop}")
+      appendln("drop: ${g.droppedBlocks}")
     }
     return stringBuilder.toString()
   }

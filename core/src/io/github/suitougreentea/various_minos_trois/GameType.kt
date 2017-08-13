@@ -4,15 +4,18 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import io.github.suitougreentea.various_minos_trois.game.BasicMinoGame
 import io.github.suitougreentea.various_minos_trois.game.Game
+import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombDebug
 import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombSurvivalMaster1
 import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombSurvivalThanatos1
 import io.github.suitougreentea.various_minos_trois.game.magic.GameMagic
+import io.github.suitougreentea.various_minos_trois.game.magic.GameMagicDebug
 import kotlin.reflect.KClass
 
 object GameTypeList {
   private val bombGameModeList = listOf(
       GameMode("Qualification", "プレイの内容によって段位が認定されるモードです。", FontColor.WHITE,
           listOf(
+              GameModeDetailed("Debug", "デバッグ用モードです。", FontColor.WHITE, { p -> GameBombDebug(p) }, AllowedRuleList(true, true, true, true)),
               GameModeDetailed("Proson-α", "一番難易度の低いモードです。", FontColor.BLUE, { p -> GameBombSurvivalMaster1(p)}, AllowedRuleList(true, true, true, false)),
               GameModeDetailed("Thanatos-α", "高速落下に耐えるモードです。", FontColor.RED, { p -> GameBombSurvivalThanatos1(p)}, AllowedRuleList(true, true, true, false))
           )
@@ -22,7 +25,7 @@ object GameTypeList {
   private val magicGameModeList = listOf(
       GameMode("Endless", "ミスしない限り、永遠に続くモードです。", FontColor.BLUE,
           listOf(
-              GameModeDetailed("Debug", "デバッグ用モードです。", FontColor.WHITE, { p -> GameMagic(p) }, AllowedRuleList(true, true, true, true))
+              GameModeDetailed("Debug", "デバッグ用モードです。", FontColor.WHITE, { p -> GameMagicDebug(p) }, AllowedRuleList(true, true, true, true))
           )
       )
   )

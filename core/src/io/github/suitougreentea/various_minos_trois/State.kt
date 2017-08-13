@@ -5,6 +5,7 @@ interface State {
   fun enter() {}
   fun update()
   fun leave() {}
+  fun leaveOrSkip() {}
 }
 
 abstract class StateWithTimer: State {
@@ -43,11 +44,13 @@ class StateManager() {
 
   fun changeState(newState: State) {
     currentState.leave()
+    currentState.leaveOrSkip()
     nextState = newState
     newState.init()
   }
 
   fun skipState(newState: State) {
+    nextState?.leaveOrSkip()
     nextState = newState
     newState.init()
   }
