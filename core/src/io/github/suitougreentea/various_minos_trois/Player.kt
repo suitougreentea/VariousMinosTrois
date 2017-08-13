@@ -239,6 +239,7 @@ class Player(val app: VariousMinosTrois, val screen: GameScreen, val playerNumbe
         gameTypeChangeDirection = -1
         gameTypeChangeTimer = 0
         currentGameMode = 0
+        gameTypeDescriptionTimer = 0
         gameModeDescriptionTimer = 0
       }
       if(input.right.isPressed) {
@@ -247,13 +248,13 @@ class Player(val app: VariousMinosTrois, val screen: GameScreen, val playerNumbe
         gameTypeChangeDirection = 1
         gameTypeChangeTimer = 0
         currentGameMode = 0
+        gameTypeDescriptionTimer = 0
         gameModeDescriptionTimer = 0
       }
       if(gameTypeChangeTimer >= 0) {
         gameTypeChangeTimer ++
         if(gameTypeChangeTimer == 30) {
           gameTypeChangeTimer = -1
-          gameTypeDescriptionTimer = 0
         }
       }
 
