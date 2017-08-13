@@ -217,6 +217,14 @@ open class BasicMinoRenderer(val app: VariousMinosTrois, val playerNumber: Int):
   open fun renderStatus(g: BasicMinoGame) {
     b.begin()
     r.fNum24.draw(b, prettifyTime(g.gameTimer), 56f, 48f, 0f, Align.topLeft, false)
+    val currentState = g.stateManager.currentState
+    if (currentState is BasicMinoGame.StateReady) {
+      if(currentState.timer <= 60) {
+        r.fRoman32.draw(b, "Ready", 64f + 80f, 88f + 16f*12, 0f, Align.center, false)
+      } else {
+        r.fRoman32.draw(b, "Go!", 64f + 80f, 88f + 16f*12, 0f, Align.center, false)
+      }
+    }
     b.end()
   }
 

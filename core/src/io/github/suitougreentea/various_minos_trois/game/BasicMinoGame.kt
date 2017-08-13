@@ -177,7 +177,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
   open fun newStateAfterCascade() = StateAfterCascade()
 
   open inner class StateReady: StateWithTimer() {
-    override val frames = 30
+    override val frames = 120
     override val stateManager = this@BasicMinoGame.stateManager
 
     override fun nextState() = newStateBeforeMoving()
