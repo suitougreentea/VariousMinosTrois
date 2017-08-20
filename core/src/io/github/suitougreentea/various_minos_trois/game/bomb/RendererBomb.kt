@@ -139,6 +139,8 @@ class RendererBomb(app: VariousMinosTrois, playerNumber: Int): BasicMinoRenderer
     b.appendln("countNumber: ${g.countNumber}")
     b.appendln("expSize: ${g.currentExplosionSize}")
     b.appendln("bombed: ${g.bombedBlocks}")
+    b.appendln("afterFreezeLineCount: ${g.afterFreezeLineCount}")
+    b.appendln("afterExplosion: ${g.afterExplosion}")
 
     return super.getDebugString(g) + b.toString()
   }

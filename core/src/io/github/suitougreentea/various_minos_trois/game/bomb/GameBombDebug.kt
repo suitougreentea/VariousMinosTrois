@@ -4,7 +4,7 @@ import io.github.suitougreentea.various_minos_trois.Player
 
 open class GameBombDebug(player: Player): GameBomb(player) {
   override var speed = SpeedDataBasicMino(
-      beforeMoving = 10,
+      beforeMoving = 30,
       moveStart = 10,
       moveSpeed = 1f,
       drop = 1 / 60f,
@@ -17,6 +17,8 @@ open class GameBombDebug(player: Player): GameBomb(player) {
   )
 
   override var speedBomb = SpeedDataBomb(
+      beforeMovingAfterFreezeLineCount = 15,
+      beforeMovingAfterExplosion = 0,
       count = 10,
       beforeExplosion = 10,
       explosion = 20,

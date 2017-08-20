@@ -17,6 +17,7 @@ class GameMagicDebug(player: Player): GameMagic(player) {
   )
 
   override var speedMagic = SpeedDataMagic(
+      beforeMovingAfterErasing = 0,
       beforeErasingNormal = 0,
       beforeErasingMagic = 0,
       beforeErasingChainNormal = 0,

@@ -40,6 +40,7 @@ class RendererMagic(app: VariousMinosTrois, playerNumber: Int): BasicMinoRendere
     b.appendln("magicRotation: ${g.currentMagicRotation}")
     b.appendln("chain: ${g.chain}")
     b.appendln("allCascade: ${g.allCascade}")
+    b.appendln("afterErasing: ${g.afterErasing}")
 
     return super.getDebugString(g) + b.toString()
   }

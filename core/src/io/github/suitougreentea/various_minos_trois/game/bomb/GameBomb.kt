@@ -50,6 +50,8 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
   override val minoBuffer = MinoBufferInfinite(6, minoGenerator)
 
   open var speedBomb = SpeedDataBomb(
+          beforeMovingAfterFreezeLineCount = 10,
+          beforeMovingAfterExplosion = 10,
           count = 10,
           beforeExplosion = 10,
           explosion = 10,
@@ -73,6 +75,9 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
   var bombedBlocks = 0
 
   var countNumber = 0
+
+  var afterFreezeLineCount = false
+  var afterExplosion = false
 
   enum class LineState {
     FILLED_WITHOUT_BOMB,
@@ -99,6 +104,9 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
   fun isCascadeNeeded() = getCurrentCascadeList().filter { it.blocks.all { it.first.y > 0 && !it.second.fixed } }.isNotEmpty()
 
   open inner class StateBeforeMoving: BasicMinoGame.StateBeforeMoving() {
+    override val frames = if(afterExplosion) speedBomb.beforeMovingAfterExplosion
+    else if(afterFreezeLineCount) speedBomb.beforeMovingAfterFreezeLineCount
+    else speed.beforeMoving
     override fun enter() {
       super.enter()
 
@@ -122,6 +130,8 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
     super.onNewCycle()
     chain = 0
     bombedBlocks = 0
+    afterFreezeLineCount = false
+    afterExplosion = false
   }
 
   open fun onLineFilled() {}
@@ -142,6 +152,7 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
     override fun init() {
       countNumber = 0
       chain ++
+      if(!isExplodable()) afterFreezeLineCount = true
       getLineState().forEachIndexed { i, e -> if(e == LineState.FILLED_WITHOUT_BOMB || e == LineState.FILLED_WITH_BOMB) countLines.add(i) }
       if(speedBomb.count == 0) {
         seQueue.add("count")
@@ -274,6 +285,11 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
     override fun nextState() = if(isCascadeNeeded()) newStateCascade()
     else if(isBigBombNeeded()) newStateMakingBigBomb()
     else newStateBeforeMoving()
+
+    override fun init() {
+      afterExplosion = true
+      super.init()
+    }
   }
 
   open inner class StateAfterCascade: BasicMinoGame.StateAfterCascade() {
@@ -366,6 +382,8 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
   }
 
   data class SpeedDataBomb(
+          var beforeMovingAfterFreezeLineCount: Int,
+          var beforeMovingAfterExplosion: Int,
           var count: Int,
           var beforeExplosion: Int,
           var explosion: Int,

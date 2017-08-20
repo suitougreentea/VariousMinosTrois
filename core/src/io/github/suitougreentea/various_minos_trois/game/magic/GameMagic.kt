@@ -9,6 +9,7 @@ open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
   override fun getRequiredRenderer(app: VariousMinosTrois) = RendererMagic(app, player.playerNumber)
 
   open var speedMagic = SpeedDataMagic(
+          beforeMovingAfterErasing = 10,
           beforeErasingNormal = 0,
           beforeErasingMagic = 0,
           beforeErasingChainNormal = 0,
@@ -49,10 +50,16 @@ open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
   var currentMagicRotation = 0
   var chain = 0
   var allCascade = false
+  var afterErasing = false
 
   override fun onNewCycle() {
     super.onNewCycle()
+    afterErasing = false
     chain = 0
+  }
+
+  open inner class StateBeforeMoving: BasicMinoGame.StateBeforeMoving() {
+    override val frames = if(afterErasing) speedMagic.beforeMovingAfterErasing else speed.beforeMoving
   }
 
   open inner class StateAfterMoving: BasicMinoGame.StateAfterMoving() {
@@ -88,8 +95,7 @@ open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
     override val stateManager = this@GameMagic.stateManager
 
     override fun nextState() = if(isCascadeNeeded()) newStateCascade() else newStateBeforeMoving()
-    override fun enter() {
-      super.enter()
+    override fun init() {
       val lineState = getLineState()
       lineState.forEachIndexed { i, s ->
         if(s != LineState.NOT_FILLED) {
@@ -120,6 +126,12 @@ open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
       if(lineState.any { it == LineState.FILLED_BLACK }) {
         field.map.filter { it.value is BlockBlack }.forEach { pos, _ -> field.remove(pos) }
       }
+      super.init()
+    }
+
+    override fun leaveOrSkip() {
+      super.leaveOrSkip()
+      afterErasing = true
     }
   }
 
@@ -135,6 +147,7 @@ open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
     }
   }
 
+  override fun newStateBeforeMoving() = StateBeforeMoving()
   override fun newStateAfterMoving() = StateAfterMoving()
   fun newStateBeforeErasing() = StateBeforeErasing()
   fun newStateErasing() = StateErasing()
@@ -233,6 +246,7 @@ open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
   class BlockBlack(): BlockBase()
 
   data class SpeedDataMagic(
+          var beforeMovingAfterErasing: Int,
           var beforeErasingNormal: Int,
           var beforeErasingChainNormal: Int,
           var beforeErasingMagic: Int,

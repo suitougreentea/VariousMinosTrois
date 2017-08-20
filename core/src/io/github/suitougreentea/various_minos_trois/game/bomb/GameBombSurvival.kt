@@ -31,6 +31,8 @@ open class GameBombSurvival(player: Player): GameBomb(player) {
   )
 
   override var speedBomb = SpeedDataBomb(
+          beforeMovingAfterFreezeLineCount = 30,
+          beforeMovingAfterExplosion = 15,
           count = 0,
           beforeExplosion = 8,
           explosion = 15,
@@ -135,8 +137,18 @@ open class GameBombSurvival(player: Player): GameBomb(player) {
     ref.set(e.second)
   }
 
-  fun <T> generateSpeedUpdateFunction(refList: List<KMutableProperty0<T>>, list: List<Pair<Int, List<T>>>): (Int) -> Unit = { level ->
+  fun <T> generateSpeedUpdateFunction(refList: List<KMutableProperty0<T>?>, list: List<Pair<Int, List<T>>>): (Int) -> Unit = { level ->
     val e = list.last { it.first <= level }
-    refList.forEachIndexed { i, ref -> ref.set(e.second[i]) }
+    refList.forEachIndexed { i, ref -> ref?.set(e.second[i]) }
+  }
+
+  fun <T> generateSpeedUpdateFunction(func: (T) -> Unit, list: List<Pair<Int, T>>): (Int) -> Unit = {
+    val e = list.last { it.first <= level }
+    func(e.second)
+  }
+
+  fun <T> generateSpeedUpdateFunction(func: (T) -> Unit, list: List<Pair<Int, List<T>>>, index: Int): (Int) -> Unit = {
+    val e = list.last { it.first <= level }
+    func(e.second[index])
   }
 }
