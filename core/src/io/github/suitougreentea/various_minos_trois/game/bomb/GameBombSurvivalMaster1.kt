@@ -89,22 +89,24 @@ class GameBombSurvivalMaster1(player: Player): GameBombSurvival(player) {
           Pair(800, 30),
           Pair(900, 35)
   )
-  // beforeMoving, lock, forceLock, beforeExplosion, explosion, afterExplosion, bigbomb
+  // beforeMoving, beforeMovingAfterFreezeLineCount/Explosion, lock, beforeExplosion, explosion, afterExplosion, bigbomb
   val otherSpeed = listOf(
-          Pair(  0, listOf(28, 30, 90, 8, 15, 10, 8)),
-          Pair(600, listOf(25, 30, 90, 6, 12, 8, 8)),
-          Pair(700, listOf(20, 30, 90, 6, 12, 8, 8)),
-          Pair(800, listOf(20, 30, 90, 4, 10, 6, 6)),
-          Pair(900, listOf(16, 20, 60, 4, 10, 6, 6))
+          Pair(  0, listOf(28, 25, 30, 8, 15, 10, 8)),
+          Pair(600, listOf(25, 20, 30, 6, 12, 8, 8)),
+          Pair(700, listOf(20, 15, 30, 6, 12, 8, 8)),
+          Pair(800, listOf(20, 12, 30, 4, 10, 6, 6)),
+          Pair(900, listOf(16,  8, 20, 4, 10, 6, 6))
   )
 
   override val speedUpdateFunctionList = listOf(
     generateSpeedUpdateFunction(speed::drop, dropSpeed),
     generateSpeedUpdateFunction(this::allBombFrequency, allBombFrequencyList),
     generateSpeedUpdateFunction(
-          listOf(speed::beforeMoving, speed::lock, speed::forceLock, speedBomb::beforeExplosion, speedBomb::explosion, speedBomb::afterExplosion, speedBomb::bigBomb),
+          listOf(speed::beforeMoving, speedBomb::beforeMovingAfterExplosion, speed::lock, speedBomb::beforeExplosion, speedBomb::explosion, speedBomb::afterExplosion, speedBomb::bigBomb),
           otherSpeed
-    )
+    ),
+    generateSpeedUpdateFunction({ e -> speedBomb.beforeMovingAfterFreezeLineCount = e }, otherSpeed, 0),
+    generateSpeedUpdateFunction({ e -> speed.forceLock = e * 3 }, otherSpeed, 2)
   )
 
   override fun onGameCleared() {

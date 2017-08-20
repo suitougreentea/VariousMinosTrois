@@ -31,6 +31,8 @@ open class GameBombSurvival(player: Player): GameBomb(player) {
   )
 
   override var speedBomb = SpeedDataBomb(
+          beforeMovingAfterFreezeLineCount = 30,
+          beforeMovingAfterExplosion = 15,
           count = 0,
           beforeExplosion = 8,
           explosion = 15,
@@ -60,8 +62,8 @@ open class GameBombSurvival(player: Player): GameBomb(player) {
 
     if(linesWithBomb == 0) {
       addLevel((basePoint * 0.5f).toInt(), true)
-      log.add("${level},${gameTimer},${lines},${chain},${drop},0,0")
-      addScore(getLineScore(level, lines, chain, drop, 0))
+      log.add("${level},${gameTimer},${lines},${chain},${droppedBlocks},0,0")
+      addScore(getLineScore(level, lines, chain, droppedBlocks, 0))
     } else {
       addLevel(basePoint, false)
     }
@@ -73,8 +75,8 @@ open class GameBombSurvival(player: Player): GameBomb(player) {
     override fun leave() {
       super.leave()
       addLevel((bombedBlocks * 0.04f).toInt(), true)
-      addScore(getLineScore(level, lines, chain, drop, bombedBlocks))
-      log.add("${level},${gameTimer},${lines},${chain},${drop},${bombedBlocks},0")
+      addScore(getLineScore(level, lines, chain, droppedBlocks, bombedBlocks))
+      log.add("${level},${gameTimer},${lines},${chain},${droppedBlocks},${bombedBlocks},0")
     }
   }
 
@@ -135,8 +137,18 @@ open class GameBombSurvival(player: Player): GameBomb(player) {
     ref.set(e.second)
   }
 
-  fun <T> generateSpeedUpdateFunction(refList: List<KMutableProperty0<T>>, list: List<Pair<Int, List<T>>>): (Int) -> Unit = { level ->
+  fun <T> generateSpeedUpdateFunction(refList: List<KMutableProperty0<T>?>, list: List<Pair<Int, List<T>>>): (Int) -> Unit = { level ->
     val e = list.last { it.first <= level }
-    refList.forEachIndexed { i, ref -> ref.set(e.second[i]) }
+    refList.forEachIndexed { i, ref -> ref?.set(e.second[i]) }
+  }
+
+  fun <T> generateSpeedUpdateFunction(func: (T) -> Unit, list: List<Pair<Int, T>>): (Int) -> Unit = {
+    val e = list.last { it.first <= level }
+    func(e.second)
+  }
+
+  fun <T> generateSpeedUpdateFunction(func: (T) -> Unit, list: List<Pair<Int, List<T>>>, index: Int): (Int) -> Unit = {
+    val e = list.last { it.first <= level }
+    func(e.second[index])
   }
 }

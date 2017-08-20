@@ -8,25 +8,27 @@ class GameBombSurvivalThanatos1(player: Player): GameBombSurvival(player) {
           Pair(  0, 50)
   )
 
-  // beforeMoving, moveStart, lock, forceLock, beforeExplosion, explosion, afterExplosion, bigbomb
+  // beforeMoving, beforeMovingAfterExplosion, moveStart, lock, beforeExplosion, explosion, afterExplosion, bigbomb
   val otherSpeed = listOf(
-          Pair(  0, listOf(10, 8, 18, 18*3, 1, 5, 2, 4)),
-          Pair(100, listOf(10, 6, 18, 18*3, 1, 4, 2, 4)),
-          Pair(200, listOf(10, 6, 17, 17*3, 1, 3, 2, 4)),
-          Pair(300, listOf( 4, 6, 15, 15*3, 0, 3, 0, 0)),
-          Pair(400, listOf( 4, 4, 13, 13*3, 0, 2, 0, 0)),
-          Pair(500, listOf( 4, 4, 12, 12*3, 0, 2, 0, 0)),
-          Pair(600, listOf( 4, 4, 10, 10*3, 0, 2, 0, 0)),
-          Pair(700, listOf( 4, 4,  8,  8*3, 0, 2, 0, 0)),
-          Pair(800, listOf( 4, 4,  7,  7*3, 0, 2, 0, 0)),
-          Pair(900, listOf( 4, 4,  6,  6*3, 0, 2, 0, 0))
+          Pair(  0, listOf(10, 6, 8, 18, 1, 5, 2, 4)),
+          Pair(100, listOf(10, 5, 6, 18, 1, 4, 2, 4)),
+          Pair(200, listOf(10, 4, 6, 17, 1, 3, 2, 4)),
+          Pair(300, listOf( 4, 4, 6, 15, 0, 3, 0, 0)),
+          Pair(400, listOf( 4, 3, 4, 13, 0, 2, 0, 0)),
+          Pair(500, listOf( 4, 3, 4, 12, 0, 2, 0, 0)),
+          Pair(600, listOf( 4, 3, 4, 10, 0, 2, 0, 0)),
+          Pair(700, listOf( 4, 3, 4,  8, 0, 2, 0, 0)),
+          Pair(800, listOf( 4, 3, 4,  7, 0, 2, 0, 0)),
+          Pair(900, listOf( 4, 3, 4,  6, 0, 2, 0, 0))
   )
 
   override val speedUpdateFunctionList = listOf(
           generateSpeedUpdateFunction(this::allBombFrequency, allBombFrequencyList),
           generateSpeedUpdateFunction(
-                  listOf(speed::beforeMoving, speed::moveStart, speed::lock, speed::forceLock, speedBomb::beforeExplosion, speedBomb::explosion, speedBomb::afterExplosion, speedBomb::bigBomb),
+                  listOf(speed::beforeMoving, speedBomb::beforeMovingAfterExplosion, speed::moveStart, speed::lock, speedBomb::beforeExplosion, speedBomb::explosion, speedBomb::afterExplosion, speedBomb::bigBomb),
                   otherSpeed
-          )
+          ),
+          generateSpeedUpdateFunction({ e -> speedBomb.beforeMovingAfterFreezeLineCount = e }, otherSpeed, 0),
+          generateSpeedUpdateFunction({ e -> speed.forceLock = e * 3 }, otherSpeed, 3)
   )
 }

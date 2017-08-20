@@ -4,6 +4,7 @@ import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.rule.*
 import java.util.*
 
+// TODO: 全タイマーを -1: inactive, 0: activated, 1-: increment(in same frame as 0)
 abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int): Game {
   override fun getRequiredRenderer(app: VariousMinosTrois) = BasicMinoRenderer(app, player.playerNumber)
 
@@ -42,16 +43,16 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
   )
 
   var moveDirection = 0
-  var moveTimer = 0
+  var moveTimer = -1
   var moveStack = 0f
   var dropStack = 0f
   var softDropStack = 0f
-  var lockTimer = 0
-  var forceLockTimer = 0
+  var lockTimer = -1
+  var forceLockTimer = -1
   var cascadeStack = 0f
   var lockRenderTimer = -1
 
-  var drop = 0
+  var droppedBlocks = 0
 
   var lockRenderList: List<Pos> = ArrayList()
 
@@ -64,6 +65,8 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
   var enableTimer = false
   var gameTimer = 0
   var gameOver = false
+
+  val nextFrameTaskList: MutableList<NextFrameTask> = ArrayList()
 
   val log: MutableList<String> = LinkedList()
 
@@ -78,11 +81,61 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     lockTimer = 0
     forceLockTimer = 0
     lockRenderTimer = -1
-    drop = 0
+    droppedBlocks = 0
     if(GameUtil.hitTestMino(field, mino, minoX, minoY, minoR)) gameOver = true
   }
 
   open fun onNewCycle() { }
+
+  fun handleMove() {
+    if(input.left.isPressed) {
+      moveDirection = -1
+      moveTimer = 0
+      moveStack = 0f
+      if(speed.moveStart > 1) attemptToMoveMino(-1)
+    }
+    if(input.right.isPressed) {
+      moveDirection = 1
+      moveTimer = 0
+      moveStack = 0f
+      if(speed.moveStart > 1) attemptToMoveMino(+1)
+    }
+
+    if(input.left.isDown && moveDirection == -1) {
+      moveTimer ++
+      if(moveTimer >= speed.moveStart) {
+        moveStack += speed.moveSpeed
+
+        repeat(moveStack.toInt(), {
+          attemptToMoveMino(-1)
+        })
+        moveStack %= 1
+      }
+    }
+
+    if(!input.left.isDown && !input.right.isDown) moveTimer = -1
+
+    if(input.right.isDown && moveDirection == 1) {
+      moveTimer ++
+      if(moveTimer >= speed.moveStart) {
+        moveStack += speed.moveSpeed
+
+        repeat(moveStack.toInt(), {
+          attemptToMoveMino(+1)
+        })
+        moveStack %= 1
+      }
+    }
+  }
+
+  fun handleRotate() {
+    if(input.a.isPressed) {
+      if(attemptToRotateMino(-1)) seQueue.add("rotation") else seQueue.add("rotation_fail")
+    }
+    if(input.b.isPressed) {
+      if(attemptToRotateMino(+1)) seQueue.add("rotation") else seQueue.add("rotation_fail")
+    }
+  }
 
   open fun attemptToMoveMino(dx: Int): Boolean {
     val mino = currentMino ?: return false
@@ -148,7 +201,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     seQueue.add("lock")
   }
 
-  fun acceptMoveInput() {
+  fun acceptMoveAccumulation() {
     if(input.left.isPressed) {
       moveDirection = -1
       moveTimer = 0
@@ -160,12 +213,14 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
       moveStack = 0f
     }
 
+    if(!input.left.isDown && !input.right.isDown) moveTimer = -1
+
     if(input.left.isDown && moveDirection == -1) {
-      if(moveTimer < speed.moveStart) moveTimer ++
+      moveTimer ++
     }
 
     if(input.right.isDown && moveDirection == 1) {
-      if(moveTimer < speed.moveStart) moveTimer ++
+      moveTimer ++
     }
   }
 
@@ -177,10 +232,10 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
   open fun newStateAfterCascade() = StateAfterCascade()
 
   open inner class StateReady: StateWithTimer() {
-    override val frames = 30
+    override val frames = 120
     override val stateManager = this@BasicMinoGame.stateManager
 
-    override fun nextState() = newStateBeforeMoving()
+    override fun nextState() = newStateMoving()
     override fun leave() {
       super.leave()
       enableTimer = true
@@ -192,17 +247,11 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     override val stateManager = this@BasicMinoGame.stateManager
 
     override fun nextState() = newStateMoving()
-    override fun update() {
-      super.update()
-      if(lockRenderTimer >= 0) lockRenderTimer ++
-      acceptMoveInput()
-    }
   }
   open inner class StateMoving: State {
     override fun enter() {
       super.enter()
       val newMino: Mino?
-      alreadyHolded = false
       if(input.c.isDown && !input.c.isPressed) {
         val currentHoldMino = holdMino
         if(currentHoldMino == null) {
@@ -216,6 +265,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
         seQueue.add("hold")
       } else {
         newMino = minoBuffer.poll()
+        alreadyHolded = false
       }
 
       if(newMino == null) {
@@ -235,74 +285,37 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
       repeat(dropStack.toInt(), {
         attemptToDropMino()
       })
-      dropStack = dropStack % 1
+      dropStack %= 1
     }
     override fun update() {
       val mino = currentMino ?: return
 
-      if(input.a.isPressed) {
-        if(attemptToRotateMino(-1)) seQueue.add("rotation") else seQueue.add("rotation_fail")
-      }
-      if(input.b.isPressed) {
-        if(attemptToRotateMino(+1)) seQueue.add("rotation") else seQueue.add("rotation_fail")
-      }
       if(input.c.isPressed) {
         if(attemptToHoldMino()) seQueue.add("hold")
       }
 
-      if(input.left.isPressed) {
-        moveDirection = -1
-        moveTimer = 0
-        moveStack = 0f
-        attemptToMoveMino(-1)
-      }
-      if(input.right.isPressed) {
-        moveDirection = 1
-        moveTimer = 0
-        moveStack = 0f
-        attemptToMoveMino(+1)
-      }
+      handleMove()
 
-      if(input.left.isDown && moveDirection == -1) {
-        if(moveTimer == speed.moveStart) {
-          moveStack += speed.moveSpeed
-
-          repeat(moveStack.toInt(), {
-            attemptToMoveMino(-1)
-          })
-          moveStack = moveStack % 1
-        } else moveTimer ++
-      }
-
-      if(input.right.isDown && moveDirection == 1) {
-        if(moveTimer == speed.moveStart) {
-          moveStack += speed.moveSpeed
-
-          repeat(moveStack.toInt(), {
-            attemptToMoveMino(+1)
-          })
-          moveStack = moveStack % 1
-        } else moveTimer ++
-      }
+      handleRotate()
 
       if(input.down.isDown) {
         softDropStack += speed.softDrop
         repeat(softDropStack.toInt(), {
-          if(attemptToDropMino()) drop ++
+          if(attemptToDropMino()) droppedBlocks ++
         })
-        softDropStack = softDropStack % 1
+        softDropStack %= 1
       } else softDropStack = 0f
 
       dropStack += speed.drop
       repeat(dropStack.toInt(), {
         attemptToDropMino()
       })
-      dropStack = dropStack % 1
+      dropStack %= 1
 
       if(input.up.isPressed) {
         while(!GameUtil.hitTestMino(field, mino, minoX, minoY - 1, minoR)) {
           minoY --
-          drop ++
+          droppedBlocks ++
         }
         lockMino()
         stateManager.changeState(newStateAfterMoving())
@@ -310,12 +323,11 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
 
       if(GameUtil.hitTestMino(field, mino, minoX, minoY - 1, minoR)) {
         dropStack = 0f
+        lockTimer ++
+        forceLockTimer ++
         if(lockTimer == speed.lock || forceLockTimer == speed.forceLock) {
           lockMino()
           stateManager.changeState(newStateAfterMoving())
-        } else {
-          lockTimer ++
-          forceLockTimer ++
         }
       } else lockTimer = 0
 
@@ -329,12 +341,6 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     override val stateManager = this@BasicMinoGame.stateManager
 
     override fun nextState(): State = newStateBeforeMoving()
-
-    override fun update() {
-      super.update()
-      if(lockRenderTimer >= 0) lockRenderTimer ++
-      acceptMoveInput()
-    }
   }
 
   open inner class StateCascade(): State {
@@ -369,7 +375,6 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
         }
       })
       cascadeStack %= 1
-      acceptMoveInput()
     }
     override fun leave() {
       super.leave()
@@ -382,11 +387,6 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     override val stateManager = this@BasicMinoGame.stateManager
 
     override fun nextState(): State = newStateBeforeMoving()
-
-    override fun update() {
-      super.update()
-      acceptMoveInput()
-    }
   }
 
   open fun getCurrentCascadeList(): MutableList<CascadeData> {
@@ -421,9 +421,13 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
   }
 
   override fun update() {
+    nextFrameTaskList.filter { !it.notExecuteOnPaused }.forEach { it.function(); nextFrameTaskList.remove(it) }
     if(gameOver) return
+    nextFrameTaskList.forEach { it.function(); nextFrameTaskList.remove(it) }
     stateManager.update()
+    if(stateManager.currentState !is StateMoving) acceptMoveAccumulation()
     if(enableTimer) gameTimer++
+    if(lockRenderTimer >= 0) lockRenderTimer ++
   }
 
   data class SpeedDataBasicMino(
@@ -440,4 +444,5 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
   )
 
   class CascadeData(val blocks: List<Pair<Pos, Block>>)
+  class NextFrameTask(val function: () -> Unit, val notExecuteOnPaused: Boolean)
 }
