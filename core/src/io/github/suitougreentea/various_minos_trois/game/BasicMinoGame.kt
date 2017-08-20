@@ -4,7 +4,6 @@ import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.rule.*
 import java.util.*
 
-// TODO: 全タイマーを -1: inactive, 0: activated, 1-: increment(in same frame as 0)
 abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int): Game {
   override fun getRequiredRenderer(app: VariousMinosTrois) = BasicMinoRenderer(app, player.playerNumber)
 
