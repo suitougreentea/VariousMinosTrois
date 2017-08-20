@@ -235,7 +235,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     override val frames = 120
     override val stateManager = this@BasicMinoGame.stateManager
 
-    override fun nextState() = newStateBeforeMoving()
+    override fun nextState() = newStateMoving()
     override fun leave() {
       super.leave()
       enableTimer = true
