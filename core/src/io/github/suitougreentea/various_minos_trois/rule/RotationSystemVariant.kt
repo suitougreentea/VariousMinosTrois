@@ -122,7 +122,7 @@ class RotationSystemVariant(val classic: Boolean): RotationSystem {
         if(!GameUtil.hitTestMino(field, mino, x + dx - 1, y + dy, newR)) {
           return RotationResult(true, Pos(dx - 1, dy), true)
         }
-        if(mino.minoId == 9 && newR == 0 && !specialKicked) {
+        if(mino.minoId == 9 && newR == 0 && !classic && !specialKicked) {
           // T Floor kick
           if(!GameUtil.hitTestMino(field, mino, x + dx, y + dy + 1, newR)) {
             specialKicked = true
