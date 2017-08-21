@@ -17,7 +17,7 @@ open class GameBomb(player: Player, rule: Rule): BasicMinoGame(player, 10, 50, r
   var allBombFrequency = 40
   var allBombOffset = 1
 
-  override val minoBuffer = MinoBufferInfinite(6, MinoGeneratorBomb())
+  override val minoBuffer = MinoBufferInfinite(bufferNum, MinoGeneratorBomb())
 
   open var speedBomb = SpeedDataBomb(
           beforeMovingAfterFreezeLineCount = 10,

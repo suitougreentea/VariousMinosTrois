@@ -20,7 +20,9 @@ import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombSurvivalMa
 import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombSurvivalThanatos1
 import io.github.suitougreentea.various_minos_trois.game.magic.GameMagic
 import io.github.suitougreentea.various_minos_trois.game.magic.GameMagicDebug
+import io.github.suitougreentea.various_minos_trois.rule.RuleClassic
 import io.github.suitougreentea.various_minos_trois.rule.RuleModern
+import io.github.suitougreentea.various_minos_trois.rule.RuleRetro
 import io.github.suitougreentea.various_minos_trois.rule.RuleVariant
 
 class Player(val app: VariousMinosTrois, val screen: GameScreen, val playerNumber: Int) {
@@ -425,8 +427,8 @@ class Player(val app: VariousMinosTrois, val screen: GameScreen, val playerNumbe
       val rule = when(ruleName) {
         "modern" -> RuleModern()
         "variant" -> RuleVariant()
-        "classic" -> RuleModern()
-        "retro" -> RuleModern()
+        "classic" -> RuleClassic()
+        "retro" -> RuleRetro()
         else -> throw IllegalArgumentException()
       }
       game = when(gameName) {

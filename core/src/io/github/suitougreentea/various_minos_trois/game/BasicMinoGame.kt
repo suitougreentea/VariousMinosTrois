@@ -16,6 +16,9 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     minoRandomizer.newMinoSet(setOf(4, 5, 6, 7, 8, 9, 10))
   }
 
+  val bufferNum = if(rule.multiNextAndHold) 6 else 1
+  val enableHold = rule.multiNextAndHold
+
   val input = player.input
 
   val field = Field(width, height)
@@ -183,6 +186,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
   }
 
   open fun attemptToHoldMino(): Boolean {
+    if(!enableHold) return false
     if(alreadyHolded) {
       return false
     } else {
@@ -262,7 +266,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     override fun enter() {
       super.enter()
       val newMino: Mino?
-      if(input.c.isDown && !input.c.isPressed) {
+      if(input.c.isDown && !input.c.isPressed && enableHold) {
         val currentHoldMino = holdMino
         if(currentHoldMino == null) {
           holdMino = minoBuffer.poll()
@@ -284,10 +288,10 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
       spawnNewMino(newMino)
       onNewCycle()
 
-      if(input.a.isDown && !input.a.isPressed) {
+      if(input.a.isDown && !input.a.isPressed && rule.initialRotation) {
         if(attemptToRotateMino(-1)) seQueue.add("init_rotation")
       }
-      if(input.b.isDown && !input.b.isPressed) {
+      if(input.b.isDown && !input.b.isPressed && rule.initialRotation) {
         if(attemptToRotateMino(+1)) seQueue.add("init_rotation")
       }
 
@@ -313,10 +317,14 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
       }
 
       if(input.down.isDown) {
-        if(rule.upKeyNoLock && GameUtil.hitTestMino(field, mino, minoX, minoY - 1, minoR) && !dropLockUsed) {
-          dropLockUsed = true
-          lockMino()
-          stateManager.changeState(newStateAfterMoving())
+        if(!rule.upKeyLock && GameUtil.hitTestMino(field, mino, minoX, minoY - 1, minoR) && !dropLockUsed) {
+          if(rule.alternativeLock) {
+            lockTimer += 2
+          } else {
+            dropLockUsed = true
+            lockMino()
+            stateManager.changeState(newStateAfterMoving())
+          }
         } else {
           softDropStack += speed.softDrop
           repeat(softDropStack.toInt(), {
@@ -340,7 +348,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
           minoY --
           droppedBlocks ++
         }
-        if(!rule.upKeyNoLock) {
+        if(rule.upKeyLock) {
           lockMino()
           stateManager.changeState(newStateAfterMoving())
         }
@@ -350,7 +358,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
         dropStack = 0f
         lockTimer ++
         forceLockTimer ++
-        if(lockTimer == speed.lock || forceLockTimer == speed.forceLock) {
+        if(lockTimer >= speed.lock || forceLockTimer == speed.forceLock) {
           lockMino()
           stateManager.changeState(newStateAfterMoving())
         }

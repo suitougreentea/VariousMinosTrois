@@ -25,3 +25,9 @@ class MinoColoringVariant: MinoColoring {
     return color[minoId]
   }
 }
+
+class MinoColoringRetro(val colorId: Int): MinoColoring {
+  override fun getMinoColor(minoId: Int): Int {
+    return colorId
+  }
+}

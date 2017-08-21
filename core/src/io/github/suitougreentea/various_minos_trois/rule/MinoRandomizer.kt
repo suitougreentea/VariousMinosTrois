@@ -8,6 +8,24 @@ interface MinoRandomizer {
   fun next(): Int
   fun reset()
 }
+class MinoRandomizerRandom(): MinoRandomizer {
+  private var minoSet: Set<Int> = setOf()
+
+  override fun getMinoSet(): Set<Int> = minoSet
+
+  override fun next(): Int {
+    return minoSet.toList()[(Math.random() * minoSet.size).toInt()]
+  }
+
+  override fun reset() {
+    throw UnsupportedOperationException()
+  }
+
+  override fun newMinoSet(minoSet: Set<Int>) {
+    this.minoSet = minoSet
+  }
+}
+
 class MinoRandomizerBag(): MinoRandomizer {
   private var minoSet: Set<Int> = setOf()
   private var bag: MutableSet<Int> = HashSet(minoSet)
