@@ -10,7 +10,7 @@ import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KMutableProperty0
 
 open class GameBombSurvival(player: Player, rule: Rule): GameBomb(player, rule) {
-  var level = 99
+  var level = 0
 
   var lines = 0
 
