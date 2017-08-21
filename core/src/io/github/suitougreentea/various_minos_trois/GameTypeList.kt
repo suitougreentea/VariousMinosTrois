@@ -15,9 +15,9 @@ object GameTypeList {
   private val bombGameModeList = listOf(
       GameMode("Qualification", "プレイの内容によって段位が認定されるモードです。", FontColor.WHITE,
           listOf(
-              GameModeDetailed("Debug", "デバッグ用モードです。", FontColor.WHITE, { p -> GameBombDebug(p) }, AllowedRuleList(true, true, true, true)),
-              GameModeDetailed("Proson-α", "一番難易度の低いモードです。", FontColor.BLUE, { p -> GameBombSurvivalMaster1(p)}, AllowedRuleList(true, true, true, false)),
-              GameModeDetailed("Thanatos-α", "高速落下に耐えるモードです。", FontColor.RED, { p -> GameBombSurvivalThanatos1(p)}, AllowedRuleList(true, true, true, false))
+              GameModeDetailed("bomb.debug", "Debug", "デバッグ用モードです。", FontColor.WHITE, AllowedRuleList(true, true, true, true)),
+              GameModeDetailed("bomb.proson1", "Proson-α", "一番難易度の低いモードです。", FontColor.BLUE, AllowedRuleList(true, true, true, false)),
+              GameModeDetailed("bomb.thanatos1", "Thanatos-α", "高速落下に耐えるモードです。", FontColor.RED, AllowedRuleList(true, true, true, false))
           )
       )
   )
@@ -25,7 +25,7 @@ object GameTypeList {
   private val magicGameModeList = listOf(
       GameMode("Endless", "ミスしない限り、永遠に続くモードです。", FontColor.BLUE,
           listOf(
-              GameModeDetailed("Debug", "デバッグ用モードです。", FontColor.WHITE, { p -> GameMagicDebug(p) }, AllowedRuleList(true, true, true, true))
+              GameModeDetailed("magic.debug", "Debug", "デバッグ用モードです。", FontColor.WHITE, AllowedRuleList(true, true, true, true))
           )
       )
   )
@@ -51,6 +51,6 @@ class GameType(val name: String, val description: String, val color: Color, val 
 
 class GameMode(val name: String, val description: String, val color: Color, val gameModeDetailedList: List<GameModeDetailed>)
 
-class GameModeDetailed(val name: String, val description: String, val color: Color, val createGame: (Player) -> Game, val allowedRuleList: AllowedRuleList)
+class GameModeDetailed(val internalName: String, val name: String, val description: String, val color: Color, val allowedRuleList: AllowedRuleList)
 
 class AllowedRuleList(val modern: Boolean, val variant: Boolean, val classic: Boolean, val retro: Boolean)

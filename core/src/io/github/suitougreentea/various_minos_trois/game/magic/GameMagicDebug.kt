@@ -1,8 +1,9 @@
 package io.github.suitougreentea.various_minos_trois.game.magic
 
 import io.github.suitougreentea.various_minos_trois.Player
+import io.github.suitougreentea.various_minos_trois.rule.Rule
 
-class GameMagicDebug(player: Player): GameMagic(player) {
+class GameMagicDebug(player: Player, rule: Rule): GameMagic(player, rule) {
   override var speed = SpeedDataBasicMino(
       beforeMoving = 10,
       moveStart = 10,

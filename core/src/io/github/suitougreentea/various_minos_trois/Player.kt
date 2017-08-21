@@ -15,6 +15,13 @@ import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack
 import com.badlogic.gdx.utils.Align
 import io.github.suitougreentea.various_minos_trois.game.Game
 import io.github.suitougreentea.various_minos_trois.game.Renderer
+import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombDebug
+import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombSurvivalMaster1
+import io.github.suitougreentea.various_minos_trois.game.bomb.GameBombSurvivalThanatos1
+import io.github.suitougreentea.various_minos_trois.game.magic.GameMagic
+import io.github.suitougreentea.various_minos_trois.game.magic.GameMagicDebug
+import io.github.suitougreentea.various_minos_trois.rule.RuleModern
+import io.github.suitougreentea.various_minos_trois.rule.RuleVariant
 
 class Player(val app: VariousMinosTrois, val screen: GameScreen, val playerNumber: Int) {
   val input = Input(app.keyConfigJson[0])
@@ -369,7 +376,7 @@ class Player(val app: VariousMinosTrois, val screen: GameScreen, val playerNumbe
       rt.setTransform(fieldMatrix)
       r.fRoman24.color = FontColor.BLUE
       r.fRoman24.draw(b, "Select Mode", 80f, 16f*21, 0f, Align.center, false)
-      r.fRoman24.draw(b, "Rule", 80f, 16f*8, 0f, Align.center, false)
+      r.fRoman24.draw(b, "RuleEntry", 80f, 16f*8, 0f, Align.center, false)
 
       r.fRoman16.color = currentGameMode.color
       r.fRoman16.draw(b, currentGameMode.name, 80f, 16f*19 + 8f, 0f, Align.center, false)
@@ -413,11 +420,25 @@ class Player(val app: VariousMinosTrois, val screen: GameScreen, val playerNumbe
 
   open inner class StateInGame: State {
     override fun enter() {
-      game = GameTypeList.list[currentGameType].gameModeList[currentGameMode].gameModeDetailedList[currentModeDetailed].createGame(this@Player)
-      game?.let {
+      val gameName = GameTypeList.list[currentGameType].gameModeList[currentGameMode].gameModeDetailedList[currentModeDetailed].internalName
+      val ruleName = RuleList.list[currentRule].internalName
+      val rule = when(ruleName) {
+        "modern" -> RuleModern()
+        "variant" -> RuleVariant()
+        "classic" -> RuleModern()
+        "retro" -> RuleModern()
+        else -> throw IllegalArgumentException()
+      }
+      game = when(gameName) {
+        "bomb.debug"     -> GameBombDebug            (this@Player, rule)
+        "bomb.proson1"   -> GameBombSurvivalMaster1  (this@Player, rule)
+        "bomb.thanatos1" -> GameBombSurvivalThanatos1(this@Player, rule)
+        "magic.debug"    -> GameMagicDebug           (this@Player, rule)
+        else -> throw IllegalArgumentException()
+      }.also {
         renderer = it.getRequiredRenderer(app)
         it.init()
-      } ?: throw IllegalStateException()
+      }
     }
     override fun update() {
       game?.let {

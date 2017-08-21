@@ -2,10 +2,19 @@ package io.github.suitougreentea.various_minos_trois.game
 
 import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.rule.*
+import io.github.suitougreentea.various_minos_trois.rule.Rule
 import java.util.*
 
-abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int): Game {
+abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int, val rule: Rule): Game {
   override fun getRequiredRenderer(app: VariousMinosTrois) = BasicMinoRenderer(app, player.playerNumber)
+  val minoRandomizer = rule.getMinoRandomizer()
+  val minoColoring = rule.getMinoColoring()
+  var rotationSystem: RotationSystem = rule.getRotationSystem()
+  var spawnSystem: SpawnSystem = rule.getSpawnSystem(width, 22)
+
+  init {
+    minoRandomizer.newMinoSet(setOf(4, 5, 6, 7, 8, 9, 10))
+  }
 
   val input = player.input
 
@@ -13,9 +22,6 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
 
   abstract val minoBuffer: MinoBuffer
   //val minoBuffer: MinoBuffer = MinoBufferFinite()
-
-  var rotationSystem: RotationSystem = RotationSystemStandard()
-  var spawnSystem: SpawnSystem = SpawnSystemStandard(width, 22)
 
   var currentMino: Mino? = null
   var minoX = 0
@@ -51,6 +57,8 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
   var cascadeStack = 0f
   var lockRenderTimer = -1
 
+  var dropLockUsed = false
+
   var droppedBlocks = 0
 
   var lockRenderList: List<Pos> = ArrayList()
@@ -75,6 +83,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     minoX = spawnData.position.x
     minoY = spawnData.position.y
     minoR = spawnData.rotation
+    rotationSystem.reset()
     dropStack = 0f
     softDropStack = 0f
     lockTimer = 0
@@ -221,6 +230,8 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     if(input.right.isDown && moveDirection == 1) {
       moveTimer ++
     }
+
+    if(!input.down.isDown) dropLockUsed = false
   }
 
   open fun newStateReady() = StateReady()
@@ -293,17 +304,30 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
         if(attemptToHoldMino()) seQueue.add("hold")
       }
 
-      handleMove()
-
-      handleRotate()
+      if(rule.moveAfterRotation) {
+        handleRotate()
+        handleMove()
+      } else {
+        handleMove()
+        handleRotate()
+      }
 
       if(input.down.isDown) {
-        softDropStack += speed.softDrop
-        repeat(softDropStack.toInt(), {
-          if(attemptToDropMino()) droppedBlocks ++
-        })
-        softDropStack %= 1
-      } else softDropStack = 0f
+        if(rule.upKeyNoLock && GameUtil.hitTestMino(field, mino, minoX, minoY - 1, minoR) && !dropLockUsed) {
+          dropLockUsed = true
+          lockMino()
+          stateManager.changeState(newStateAfterMoving())
+        } else {
+          softDropStack += speed.softDrop
+          repeat(softDropStack.toInt(), {
+            if (attemptToDropMino()) droppedBlocks++
+          })
+          softDropStack %= 1
+        }
+      } else {
+        softDropStack = 0f
+        dropLockUsed = false
+      }
 
       dropStack += speed.drop
       repeat(dropStack.toInt(), {
@@ -316,8 +340,10 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
           minoY --
           droppedBlocks ++
         }
-        lockMino()
-        stateManager.changeState(newStateAfterMoving())
+        if(!rule.upKeyNoLock) {
+          lockMino()
+          stateManager.changeState(newStateAfterMoving())
+        }
       }
 
       if(GameUtil.hitTestMino(field, mino, minoX, minoY - 1, minoR)) {
@@ -416,6 +442,7 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
   }
 
   override fun init() {
+    minoBuffer.init()
     stateManager.changeState(newStateReady())
   }
 

@@ -106,7 +106,7 @@ open class BasicMinoRenderer(val app: VariousMinosTrois, val playerNumber: Int):
         val size = e.second
         val mino = g.minoBuffer[i]
         if(mino != null) {
-          mino.blocks.forEach {
+          mino.getRotatedBlocks(g.spawnSystem.get(mino.minoId).rotation).forEach {
             val (bx, by) = it.first
             val block = it.second
             renderBlock(b, blockTexture, block, (ox + bx * size).toFloat(), (oy + by * size).toFloat(), size)
@@ -120,9 +120,9 @@ open class BasicMinoRenderer(val app: VariousMinosTrois, val playerNumber: Int):
       val (ox, oy) = holdPosition.first
       val size = holdPosition.second
       if(g.alreadyHolded) b.setColor(0.5f, 0.5f, 0.5f, 1f)
-      holdMino.blocks.forEach { f ->
-        val (bx, by) = f.first
-        val block = f.second
+      holdMino.getRotatedBlocks(g.spawnSystem.get(holdMino.minoId).rotation).forEach {
+        val (bx, by) = it.first
+        val block = it.second
         renderBlock(b, blockTexture, block, (ox + bx * size).toFloat(), (oy + by * size).toFloat(), size)
       }
       b.setColor(1f, 1f, 1f, 1f)

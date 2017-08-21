@@ -9,6 +9,7 @@ import io.github.suitougreentea.various_minos_trois.rule.MinoRandomizer
 import java.util.*
 
 interface MinoBuffer {
+  fun init()
   operator fun get(index: Int): Mino?
   operator fun set(index: Int, mino: Mino)
   fun peek(): Mino?
@@ -19,7 +20,8 @@ interface MinoBuffer {
 
 class MinoBufferInfinite(override val size: Int, val generator: MinoGenerator): MinoBuffer {
   val list: MutableList<Mino> = ArrayList()
-  init {
+
+  override fun init() {
     repeat(size) { offer() }
   }
 
@@ -48,6 +50,8 @@ class MinoBufferInfinite(override val size: Int, val generator: MinoGenerator): 
 
 class MinoBufferFinite(override val size: Int, val generator: MinoGenerator, val randomizer: MinoRandomizer, val coloring: MinoColoring): MinoBuffer {
   val list: MutableList<Mino> = ArrayList(MinoBufferInfinite(size, generator).list)
+
+  override fun init() { }
 
   override fun get(index: Int) = list.getOrNull(index)
 

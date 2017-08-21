@@ -15,3 +15,13 @@ class MinoColoringStandard: MinoColoring {
     return color[minoId]
   }
 }
+
+class MinoColoringVariant: MinoColoring {
+  val color = arrayOf(
+      2, 2, 2, 8,
+      2, 26, 5, 8, 32, 20, 14,
+      32, 14, 2, 5, 26, 14, 32, 26, 5, 20, 8, 8, 8, 8, 20, 20, 14, 32)
+  override fun getMinoColor(minoId: Int): Int {
+    return color[minoId]
+  }
+}

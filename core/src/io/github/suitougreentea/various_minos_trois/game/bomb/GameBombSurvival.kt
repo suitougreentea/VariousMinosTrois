@@ -3,12 +3,13 @@ package io.github.suitougreentea.various_minos_trois.game.bomb
 import com.badlogic.gdx.math.MathUtils
 import io.github.suitougreentea.various_minos_trois.Input
 import io.github.suitougreentea.various_minos_trois.Player
+import io.github.suitougreentea.various_minos_trois.rule.Rule
 import java.io.File
 import kotlin.comparisons.maxOf
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KMutableProperty0
 
-open class GameBombSurvival(player: Player): GameBomb(player) {
+open class GameBombSurvival(player: Player, rule: Rule): GameBomb(player, rule) {
   var level = 99
 
   var lines = 0

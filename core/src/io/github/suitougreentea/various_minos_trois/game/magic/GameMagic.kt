@@ -4,8 +4,9 @@ import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.game.*
 import io.github.suitougreentea.various_minos_trois.rule.MinoColoringStandard
 import io.github.suitougreentea.various_minos_trois.rule.MinoRandomizerBag
+import io.github.suitougreentea.various_minos_trois.rule.Rule
 
-open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
+open class GameMagic(player: Player, rule: Rule): BasicMinoGame(player, 10, 50, rule) {
   override fun getRequiredRenderer(app: VariousMinosTrois) = RendererMagic(app, player.playerNumber)
 
   open var speedMagic = SpeedDataMagic(
@@ -16,9 +17,10 @@ open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
           erasing = 20
   )
 
-  val minoRandomizer = MinoRandomizerBag(setOf(4, 5, 6, 7, 8, 9, 10))
-  val minoRandomizerBlack = MinoRandomizerBag(setOf(0, 1, 3))
-  val minoColoring = MinoColoringStandard()
+  val minoRandomizerBlack = MinoRandomizerBag()
+  init {
+    minoRandomizerBlack.newMinoSet(setOf(0, 1, 3))
+  }
 
   val minoGenerator = object: MinoGenerator {
     override fun newMino(): Mino {
@@ -58,7 +60,7 @@ open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
     chain = 0
   }
 
-  open inner class StateBeforeMoving: BasicMinoGame.StateBeforeMoving() {
+  inner class StateBeforeMoving: BasicMinoGame.StateBeforeMoving() {
     override val frames = if(afterErasing) speedMagic.beforeMovingAfterErasing else speed.beforeMoving
   }
 
@@ -87,7 +89,7 @@ open class GameMagic(player: Player): BasicMinoGame(player, 10, 50) {
     }
   }
 
-  open inner class StateErasing: StateWithTimer() {
+  inner class StateErasing: StateWithTimer() {
     // multiple: all erase, black will turn into color of upper line? (TODO)
     // black: only erase
     // rainbow: erase, black will turn into rainbow, cascade

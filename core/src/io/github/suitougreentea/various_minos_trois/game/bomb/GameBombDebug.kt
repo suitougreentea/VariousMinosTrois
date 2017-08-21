@@ -1,8 +1,13 @@
 package io.github.suitougreentea.various_minos_trois.game.bomb
 
 import io.github.suitougreentea.various_minos_trois.Player
+import io.github.suitougreentea.various_minos_trois.rule.Rule
 
-open class GameBombDebug(player: Player): GameBomb(player) {
+open class GameBombDebug(player: Player, rule: Rule): GameBomb(player, rule) {
+  init {
+    minoRandomizer.newMinoSet((0..28).toSet())
+  }
+
   override var speed = SpeedDataBasicMino(
       beforeMoving = 30,
       moveStart = 10,

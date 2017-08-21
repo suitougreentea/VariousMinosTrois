@@ -3,51 +3,21 @@ package io.github.suitougreentea.various_minos_trois.game.bomb
 import io.github.suitougreentea.various_minos_trois.*
 import io.github.suitougreentea.various_minos_trois.game.*
 import io.github.suitougreentea.various_minos_trois.game.MinoBufferInfinite
-import io.github.suitougreentea.various_minos_trois.rule.MinoColoringStandard
-import io.github.suitougreentea.various_minos_trois.rule.MinoRandomizerBag
+import io.github.suitougreentea.various_minos_trois.rule.Rule
 import java.util.*
 
 // TODO: フリーズ状態をBlockに含める
-open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
+open class GameBomb(player: Player, rule: Rule): BasicMinoGame(player, 10, 50, rule) {
   override fun getRequiredRenderer(app: VariousMinosTrois) = RendererBomb(app, player.playerNumber)
 
-  val bombSize = arrayOf (Pair(3, 0), Pair(3, 1), Pair(3, 2), Pair(3, 3), Pair(4, 4), Pair(4, 4), Pair(5, 5), Pair(5, 5), Pair(6, 6), Pair(6, 6), Pair(7, 7), Pair(7, 7), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8))
-
-  val minoRandomizer = MinoRandomizerBag(setOf(4, 5, 6, 7, 8, 9, 10))
-  val minoColoring = MinoColoringStandard()
-  val minoGenerator = object: MinoGenerator {
-    var count = 0
-    override fun newMino(): Mino {
-      val minoId = minoRandomizer.next()
-      val colorId = minoColoring.getMinoColor(minoId)
-      val blockPositions = MinoList.list[minoId].second
-      val bombIndex = (Math.random() * blockPositions.size).toInt()
-
-      val blocks = if((count + allBombOffset) % allBombFrequency == 0) {
-        blockPositions.mapIndexed { _, pos -> Pair(pos, BlockBomb()) }
-      } else if((count + bombOffset) % bombFrequency == 0) {
-        blockPositions.mapIndexed { i, pos ->
-          when(i) {
-            bombIndex -> Pair(pos, BlockBomb())
-            else -> Pair(pos, BlockNormal(colorId))
-          }
-        }
-      } else {
-        blockPositions.mapIndexed { _, pos -> Pair(pos, BlockNormal(colorId)) }
-      }
-
-      count++
-
-      return Mino(minoId, blocks)
-    }
-  }
+  val bombSize = arrayOf(Pair(3, 0), Pair(3, 1), Pair(3, 2), Pair(3, 3), Pair(4, 4), Pair(4, 4), Pair(5, 5), Pair(5, 5), Pair(6, 6), Pair(6, 6), Pair(7, 7), Pair(7, 7), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8), Pair(8, 8))
 
   var bombFrequency = 2
   var bombOffset = 0
   var allBombFrequency = 40
   var allBombOffset = 1
 
-  override val minoBuffer = MinoBufferInfinite(6, minoGenerator)
+  override val minoBuffer = MinoBufferInfinite(6, MinoGeneratorBomb())
 
   open var speedBomb = SpeedDataBomb(
           beforeMovingAfterFreezeLineCount = 10,
@@ -103,7 +73,7 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
 
   fun isCascadeNeeded() = getCurrentCascadeList().filter { it.blocks.all { it.first.y > 0 && !it.second.fixed } }.isNotEmpty()
 
-  open inner class StateBeforeMoving: BasicMinoGame.StateBeforeMoving() {
+  inner class StateBeforeMoving: BasicMinoGame.StateBeforeMoving() {
     override val frames = if(afterExplosion) speedBomb.beforeMovingAfterExplosion
     else if(afterFreezeLineCount) speedBomb.beforeMovingAfterFreezeLineCount
     else speed.beforeMoving
@@ -189,7 +159,7 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
     }
   }
 
-  open inner class StateBeforeExplosion: StateWithTimer() {
+  inner class StateBeforeExplosion: StateWithTimer() {
     override val frames = speedBomb.beforeExplosion
     override val stateManager = this@GameBomb.stateManager
 
@@ -347,6 +317,33 @@ open class GameBomb(player: Player): BasicMinoGame(player, 10, 50) {
         field[Pos(it.x + 1, it.y + 1)] = BlockBigBomb(BlockBigBomb.Position.TOP_RIGHT)
       }
       bigBombList = ArrayList()
+    }
+  }
+
+  inner class MinoGeneratorBomb: MinoGenerator {
+    var count = 0
+    override fun newMino(): Mino {
+      val minoId = minoRandomizer.next()
+      val colorId = minoColoring.getMinoColor(minoId)
+      val blockPositions = MinoList.list[minoId].second
+      val bombIndex = (Math.random() * blockPositions.size).toInt()
+
+      val blocks = if((count + allBombOffset) % allBombFrequency == 0) {
+        blockPositions.mapIndexed { _, pos -> Pair(pos, BlockBomb()) }
+      } else if((count + bombOffset) % bombFrequency == 0) {
+        blockPositions.mapIndexed { i, pos ->
+          when(i) {
+            bombIndex -> Pair(pos, BlockBomb())
+            else -> Pair(pos, BlockNormal(colorId))
+          }
+        }
+      } else {
+        blockPositions.mapIndexed { _, pos -> Pair(pos, BlockNormal(colorId)) }
+      }
+
+      count++
+
+      return Mino(minoId, blocks)
     }
   }
 

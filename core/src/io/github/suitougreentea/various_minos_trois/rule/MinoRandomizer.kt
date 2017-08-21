@@ -8,7 +8,8 @@ interface MinoRandomizer {
   fun next(): Int
   fun reset()
 }
-class MinoRandomizerBag(private var minoSet: Set<Int>): MinoRandomizer {
+class MinoRandomizerBag(): MinoRandomizer {
+  private var minoSet: Set<Int> = setOf()
   private var bag: MutableSet<Int> = HashSet(minoSet)
 
   override fun getMinoSet(): Set<Int> = minoSet
@@ -19,7 +20,10 @@ class MinoRandomizerBag(private var minoSet: Set<Int>): MinoRandomizer {
   }
 
   override fun next(): Int {
-    if(bag.size == 0) bag = HashSet(minoSet)
+    if(bag.size == 0) {
+      if(minoSet.size == 0) throw IllegalArgumentException()
+      bag = HashSet(minoSet)
+    }
     val list = bag.toList()
     val result = list[(Math.random() * list.size).toInt()]
     bag.remove(result)
