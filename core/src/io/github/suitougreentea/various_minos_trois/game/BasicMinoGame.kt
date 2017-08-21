@@ -300,16 +300,16 @@ abstract class BasicMinoGame(val player: Player, val width: Int, val height: Int
     override fun update() {
       val mino = currentMino ?: return
 
-      if(input.c.isPressed) {
-        if(attemptToHoldMino()) seQueue.add("hold")
-      }
-
       if(rule.moveAfterRotation) {
         handleRotate()
         handleMove()
       } else {
         handleMove()
         handleRotate()
+      }
+
+      if(input.c.isPressed) {
+        if(attemptToHoldMino()) seQueue.add("hold")
       }
 
       if(input.down.isDown) {
